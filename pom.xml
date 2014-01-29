@@ -1,0 +1,144 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	
+	<modelVersion>4.0.0</modelVersion>
+  
+  	<!-- maven specifc artifact grouping and versioning information -->
+  	<groupId>com.mnxfst.streams</groupId>
+  	<artifactId>stream-analyzer</artifactId>
+  	<version>0.0.1-SNAPSHOT</version>
+  	<packaging>jar</packaging>
+
+  	<!-- general project information, eg. name and description -->
+  	<name>stream-analyzer</name>
+  	<description>Validates contents of an inbound stream of independent events against a pre-defined ruleset</description>
+  	<url>https://github.com/mnxfst/stream-analyzer</url>
+  	<inceptionYear>2014</inceptionYear>
+  
+	<!-- application owner -->
+	<organization>
+		<name>mnxfst</name>
+		<url>http://twitter.com/mnxfst</url>
+	</organization>
+
+	<!-- involved developers -->
+	<developers>
+		<developer>
+			<id>mnxfst</id>
+			<email>mnxfst@gmail.com</email>
+			<name>Christian Kreutzfeldt</name>
+			<roles>
+				<role>Architect</role>
+				<role>Developer</role>
+			</roles>
+			<url>http://twitter.com/mnxfst</url>
+			<timezone>+1</timezone>
+		</developer>
+  	</developers>
+
+  	<dependencies>
+
+		<!-- testing -->  	
+  		<dependency>
+  			<groupId>junit</groupId>
+  			<artifactId>junit</artifactId>
+  			<version>4.11</version>
+  			<scope>test</scope>
+  		</dependency>
+
+		<dependency>
+	  		<groupId>com.typesafe.akka</groupId>
+	  		<artifactId>akka-testkit_2.10</artifactId>
+	  		<version>2.2.3</version>
+		</dependency>
+  		
+  		<!-- logging -->
+  		<dependency>
+  			<groupId>log4j</groupId>
+  			<artifactId>log4j</artifactId>
+  			<version>1.2.17</version>
+  		</dependency>
+  		
+  		<!-- websocket libraries -->
+		<dependency>
+        	<groupId>javax.websocket</groupId>
+            <artifactId>javax.websocket-api</artifactId>
+            <version>1.0</version>
+		</dependency>
+                
+		<dependency>
+        	<groupId>org.eclipse.jetty.websocket</groupId>
+            <artifactId>websocket-client</artifactId>
+            <version>9.1.1.v20140108</version>
+		</dependency>
+		
+  		<!-- akka and friends -->
+		<dependency>
+	  		<groupId>com.typesafe.akka</groupId>
+	  		<artifactId>akka-actor_2.10</artifactId>
+	  		<version>2.2.3</version>
+		</dependency>
+		
+		<!-- apache commons libraries -->
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+			<version>3.1</version>
+		</dependency>
+
+		<dependency>
+			<groupId>commons-collections</groupId>
+			<artifactId>commons-collections</artifactId>
+			<version>3.1</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>commons-codec</groupId>
+			<artifactId>commons-codec</artifactId>
+			<version>1.8</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>commons-cli</groupId>
+			<artifactId>commons-cli</artifactId>
+			<version>1.2</version>
+		</dependency>
+
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-math3</artifactId>
+            <version>3.2</version>
+        </dependency>  		
+  		
+  		<!-- jackson -->
+		<dependency>
+      		<groupId>org.codehaus.jackson</groupId>
+      		<artifactId>jackson-mapper-asl</artifactId>
+      		<version>1.9.3</version>
+      		<type>jar</type>
+    	</dependency>  		
+  		
+    	<dependency>
+    		<groupId>com.fasterxml.jackson.core</groupId>
+  			<artifactId>jackson-databind</artifactId>
+  			<version>2.2.2</version>
+    	</dependency>   		
+	</dependencies>	  
+  
+    	<build>
+  		<plugins>
+  		
+  			<!-- ensure to use java version 1.7 during compilation process -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>2.3.2</version>
+				<configuration>
+					<source>1.7</source>
+					<target>1.7</target>
+					<encoding>UTF-8</encoding>
+				</configuration>
+			</plugin>
+  </plugins>
+  </build>
+  
+</project>
