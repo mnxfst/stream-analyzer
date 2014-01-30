@@ -1,0 +1,90 @@
+todo:
+	* include component configuration into pipeline configuration as it allows
+	  inline setup for each component whereas a simple reference to outside of 
+	  a pipeline configuration requires a thorough handling of references towards
+	  customized configurations. placing the configuration outside cleans up the
+	  pipeline configuration and provides a chance to putting component configuration
+	  into separate files 
+	* where to store configuration: files or database
+	  - files: quick win solution as it does not require a full database layer plus
+	           ui for setting configuration options. not as flexible as database stored
+	           configuration which allows changes during runtime
+        database: requires a "full-blown" database layer which takes time to implement
+                  and ui programming knowledge. provides a way to change configuration
+                  during runtime and thus enables analysts to dynamically set up pipelines.
+                  added the feature of dynamically loading component implementations or
+                  modifying analyzer scripts an on-demand change of pipelines is possible.
+
+message format:
+	* event source identifier
+	* timestamp
+	* data collector identifier
+	* json
+
+data collectors_:
+	* receive all inbound traffic from technical interfaces
+	  push: soap, rest, http (+parameters)
+	  pull: websocket, feed
+	  
+	* convert inbound events to json notation
+	  --> sta handles text content only
+	* operate asynchronously by receiving data and forwarding
+	  it towards the processing pipeline whereas the origin receives
+	  an immediate response
+	  
+	configuration:
+	* data collectors are quite independent on their configuration
+	  data as they are specific for each implementation
+	* they must receive a named reference pointing towards the dispatcher
+	  unit as it is the only location the collectors forward their 
+	  inbound traffic to	  
+
+dispatcher:
+	* receives all converted inbound traffic formatted as json objects
+	* holds a configured set of query string/locations to look up 
+	  event sources
+	* each event sources is configured such that it clearly identifies a
+	  pipeline processing its inbound events
+	  
+	configuration:
+	* mapping from event source identifier towards a pipeline name/identifier
+	  each event source identifier may reference multiple pipelines
+	* default location receiving all inbound traffic which holds an un-configured
+	  event source identifier
+	* error location receiving all traffic which shows at least one error
+	* router type (dispatcher multiplication) + configuration
+
+pipeline:
+	* each pipeline consists of components which either
+	  - analyze the contents of an inbound event
+	  - modify the contents of an inbound event
+	* each component forwards processed events according its processing
+	  results
+	  
+	configuration:
+	* pipeline identifier
+	* router type + configuration
+	* ordered reference towards all components
+	* component configuration 
+	  
+analyzing components:
+	* components apply a pre-configured script (or alike) on the received
+	  event
+	* each script must return _one_ result value
+	* depending on the previously computed result the component forwards
+	  the event towards a configured component (analyzer or modifier)
+	  
+modifying component:
+	* components apply a pre-configured script (or alike) on the received
+	  event
+	* each script must return a result which is compatible with that of the 
+	  inbound event
+	* modifiers forward their events either to an analyzer or another modifier
+	  --> modifiers simply support only one forwarding direction
+	  
+default location:
+	* receives all traffic from the dispatcher which cannot be forwarded to a
+	  specific pipeline
+	  
+error location:
+    * receives all traffic which shows TECHNICAL errors 

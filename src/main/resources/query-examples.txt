@@ -1,0 +1,3 @@
+${person.lastname} == 'Kreutzfeldt' && ${person.firstname} == 'Christian'
+${person.city} == 'Hamburg' && ${person.postalCode} != 23847
+${person.street} != null && ${person.street2} == null
