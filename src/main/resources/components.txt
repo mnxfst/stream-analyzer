@@ -22,7 +22,7 @@ message format:
 	* data collector identifier (lower-case!!!)
 	* json
 
-data collectors_:
+data collectors:
 	* receive all inbound traffic from technical interfaces
 	  push: soap, rest, http (+parameters)
 	  pull: websocket, feed
@@ -74,6 +74,9 @@ analyzing components:
 	* each script must return _one_ result value
 	* depending on the previously computed result the component forwards
 	  the event towards a configured component (analyzer or modifier)
+	* the analyzer components must be generic and receive different results plus forwarding
+	  information and a script to evaluate
+	
 	  
 modifying component:
 	* components apply a pre-configured script (or alike) on the received
@@ -82,6 +85,10 @@ modifying component:
 	  inbound event
 	* modifiers forward their events either to an analyzer or another modifier
 	  --> modifiers simply support only one forwarding direction
+	* the modifier components must be generic and receive a forwarding information 
+	  pointing to a single component plus a script to evaluate which returns the
+	  same message type as provided
+	
 	  
 default location:
 	* receives all traffic from the dispatcher which cannot be forwarded to a

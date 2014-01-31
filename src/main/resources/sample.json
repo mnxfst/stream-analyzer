@@ -1,0 +1,29 @@
+{
+	'user': {
+  				'logged_in': true,
+    			'name': 'John Doe',
+    			'handle': 'johndoe',
+            	'avatar': {
+                    'small': 'https://myapp.com/avatar-small/johndoe.png',
+                    'large': 'https://myapp.com/avatar-large/johndoe.png'
+                }
+        },
+    'draft_status': 'The meaning of life is',
+    'active_tab': 'timeline',
+    'timeline': [
+        {
+            'type': 'status',
+            'status': 'FFFFFFFUUUUUUUUUUUU',
+            'user': {
+                'name': 'Rage Guy',
+                'handle': 'rageguy',
+                'avatar': {
+                    'small': 'https://myapp.com/avatar-small/f7u12.png',
+                    'large': 'https://myapp.com/avatar-large/f7u12.png'
+                }
+            }
+        }
+    ],
+    'mentions': null,
+    'direct_messages': null
+}

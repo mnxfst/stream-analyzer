@@ -16,10 +16,12 @@
 package com.mnxfst.stream.message;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.mnxfst.stream.model.Error;
 
 /**
  * Event message as expected by all analyzer and modifier components 
@@ -43,12 +45,13 @@ public class StreamEventMessage implements Serializable {
 	@JsonProperty ( value = "timestamp", required = true )
 	private long timestamp = 0;
 	
-	/** initial message content */
+	/** message content */
 	@JsonProperty ( value = "content", required = true )
 	private String content = null;
 	
-	/** message represented as json node which is modified throughout the pipeline */
-	private ObjectNode json = null;
+	/** error stack */
+	@JsonProperty ( value = "errorStack", required = true )
+	private List<Error> errorStack = new ArrayList<>();
 	
 	public StreamEventMessage() {		
 	}
@@ -59,14 +62,31 @@ public class StreamEventMessage implements Serializable {
 	 * @param eventCollectorId
 	 * @param timestamp
 	 * @param content
-	 * @param json
 	 */
-	public StreamEventMessage(final String eventSourceId, final String eventCollectorId, final long timestamp, final String content, final ObjectNode json) {
+	public StreamEventMessage(final String eventSourceId, final String eventCollectorId, final long timestamp, final String content) {
 		this.eventCollectorId = eventCollectorId;
 		this.eventSourceId = eventSourceId;
 		this.timestamp = timestamp;
 		this.content = content;
-		this.json = json;
+	}
+	
+	/**
+	 * Adds a new error message to the stack
+	 * @param error
+	 */
+	public void addError(final Error error) {
+		this.errorStack.add(error);
+	}
+	
+	/**
+	 * Adds a new error message to the stack
+	 * @param key
+	 * @param componentId
+	 * @param location
+	 * @param message
+	 */
+	public void addError(final String key, final String componentId, final String location, final String message) {
+		this.errorStack.add(new Error(key, componentId, location, message));
 	}
 
 	public String getEventSourceId() {
@@ -100,14 +120,5 @@ public class StreamEventMessage implements Serializable {
 	public void setContent(String content) {
 		this.content = content;
 	}
-
-	public ObjectNode getJson() {
-		return json;
-	}
-
-	public void setJson(ObjectNode json) {
-		this.json = json;
-	}
-	
 	
 }
