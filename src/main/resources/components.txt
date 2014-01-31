@@ -15,10 +15,11 @@ todo:
                   added the feature of dynamically loading component implementations or
                   modifying analyzer scripts an on-demand change of pipelines is possible.
 
+    
 message format:
-	* event source identifier
+	* event source identifier (lower-case!!!)
 	* timestamp
-	* data collector identifier
+	* data collector identifier (lower-case!!!)
 	* json
 
 data collectors_:
@@ -87,4 +88,6 @@ default location:
 	  specific pipeline
 	  
 error location:
-    * receives all traffic which shows TECHNICAL errors 
+    * receives all traffic which shows TECHNICAL errors
+    
+    
