@@ -34,13 +34,19 @@ public class ScriptingExample {
 
 //	    engine.eval(json.toString());
 	    engine.eval(f.toString());
+//	    engine.put("data",  json.toString());
+	    long start = System.currentTimeMillis();
 	    engine.eval("var data = " + json.toString());
 	    engine.eval("var db = SpahQL.db(data);");
-	    engine.eval("var user = db.select('/draft_status'); println(user);");
+//	    engine.eval("var user = db.select('/draft_status'); println(user);");
+//	    engine.eval("var result = JSON.stringify(data)");
+//	    System.out.println(engine.get("result")+"\n");
 	    engine.eval("db.select('/draft_status').replace('Test State');");
-	    engine.eval("var user = db.select('/draft_status'); println(user);");
-	    engine.eval("var result = 'true';");
-	    System.out.println(engine.get("result").getClass().getName());
+//	    engine.eval("var user = db.select('/draft_status'); println(user);");
+	    engine.eval("var result = JSON.stringify(data)");
+	    System.out.println(engine.get("result"));
+	    long end = System.currentTimeMillis();
+	    System.out.println((end-start) + "ms");
 	    
 //	    engine.p
 	    

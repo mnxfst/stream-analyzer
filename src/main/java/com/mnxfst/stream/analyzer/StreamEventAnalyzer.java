@@ -19,15 +19,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
 import org.apache.commons.lang3.StringUtils;
 
 import akka.actor.ActorRef;
-import akka.actor.UntypedActor;
 
+import com.mnxfst.stream.AbstractStreamEventScriptEvaluator;
 import com.mnxfst.stream.message.StreamEventMessage;
 
 
@@ -38,23 +36,10 @@ import com.mnxfst.stream.message.StreamEventMessage;
  * @author mnxfst
  * @since 31.01.2014
  */
-public class StreamEventAnalyzer extends UntypedActor {
-
-	/** attribute which must contain the result of an analyzer script */
-	private static final String STREAM_ANALYZER_SCRIPT_RESULT_ATTRIBUTE = "analyzerResponse";
+public class StreamEventAnalyzer extends AbstractStreamEventScriptEvaluator {
 	
-	/** analyzer name or identifier */
-	private final String identifier;
-	/** javascript used for analyzing inbound stream events */
-	private final String script;	
-	/** field to fetch the result from */
-	private final String resultAttribute;	
 	/** forwarding rules */
 	private final Map<String, List<ActorRef>> forwardingRules = new HashMap<>();
-	/** scripting engine */
-	private final ScriptEngine scriptEngine;
-	/** error handler */
-	private final ActorRef errorHandler;
 	
 	/**
 	 * Initializes the stream event analyzer using the provided input
@@ -64,17 +49,9 @@ public class StreamEventAnalyzer extends UntypedActor {
 	 * @param forwardingRules
 	 * @param errorHandler
 	 */
-	public StreamEventAnalyzer(final String identifier, final String script, final String resultAttribute, final Map<String, List<ActorRef>> forwardingRules, final ActorRef errorHandler) {
-		this.identifier = identifier;
-		this.script = script;
-		this.resultAttribute = resultAttribute;
-		this.forwardingRules.putAll(forwardingRules);
-		this.errorHandler = errorHandler;
-		
-		ScriptEngineManager scriptEngineManager = new ScriptEngineManager();
-		this.scriptEngine = scriptEngineManager.getEngineByName("JavaScript");
-		if(this.scriptEngine == null)
-			throw new RuntimeException("Failed to initializes script engine");
+	public StreamEventAnalyzer(final String identifier, final String script, final Map<String, List<ActorRef>> forwardingRules, final ActorRef errorHandler) {		
+		super(identifier, script, errorHandler);		
+		this.forwardingRules.putAll(forwardingRules);		
 	}
 	
 	/**
@@ -88,14 +65,12 @@ public class StreamEventAnalyzer extends UntypedActor {
 			// analyze message with configured script
 			String response = null;
 			try {
-				response = analyzerStreamEvent(msg);
+				response = evaluareScript(msg);
 			} catch(ScriptException e) {
-				msg.addError("stream.analyzer.script.execution.failed", identifier, "analyzerStreamEvent", "Failed to execute script. Error: " + e.getMessage());
-				this.errorHandler.tell(msg, getSelf());
+				reportError(msg, "stream.analyzer.script.execution.failed", "analyzerStreamEvent", "Failed to execute script. Error: " + e.getMessage());
 				return;
 			} catch(Exception e) {
-				msg.addError("stream.analyzer.script.execution.general", identifier, "analyzerStreamEvent", e.getMessage());
-				this.errorHandler.tell(msg, getSelf());
+				reportError(msg, "stream.analyzer.script.execution.general", "analyzerStreamEvent", e.getMessage());
 				return;
 			}
 
@@ -103,8 +78,7 @@ public class StreamEventAnalyzer extends UntypedActor {
 			try {
 				forwardStreamEvent(msg, response);
 			} catch(Exception e) {
-				msg.addError("stream.analyzer.script.forwarding.general", identifier, "forwardStreamEvent", e.getMessage());
-				this.errorHandler.tell(msg, getSelf());
+				reportError(msg,"stream.analyzer.script.forwarding.general", "forwardStreamEvent", e.getMessage());
 				return;
 			}
 
@@ -120,16 +94,14 @@ public class StreamEventAnalyzer extends UntypedActor {
 
 		// ensure that the script response is not blank as it is otherwise forwarded to the error handler
 		if(StringUtils.isBlank(scriptResponse)) {
-			streamEventMessage.addError("stream.analyzer.script.forwarding.noResponse", identifier, "forwardStreamEvent", "no response found");
-			this.errorHandler.tell(streamEventMessage, getSelf());
+			reportError(streamEventMessage, "stream.analyzer.script.forwarding.noResponse", "forwardStreamEvent", "no response found");
 			return;
 		}
 			
 		// fetch the receivers configured for the script response, otherwise forward the message to the error handler
 		List<ActorRef> forwards = this.forwardingRules.get(scriptResponse);
 		if(forwards == null || forwards.isEmpty()) {
-			streamEventMessage.addError("stream.analyzer.script.forwarding.noRules", identifier, "forwardStreamEvent", "no forwarding rule found for response");
-			this.errorHandler.tell(streamEventMessage, getSelf());
+			reportError(streamEventMessage, "stream.analyzer.script.forwarding.noRules", "forwardStreamEvent", "no forwarding rule found for response");
 			return;
 		}
 		
@@ -140,15 +112,5 @@ public class StreamEventAnalyzer extends UntypedActor {
 		}
 	}
 	
-	/**
-	 * Applies the given script on the received {@link StreamEventMessage stream event}
-	 * @param streamEventMessage
-	 * @return
-	 * @throws ScriptException 
-	 */
-	protected String analyzerStreamEvent(final StreamEventMessage streamEventMessage) throws ScriptException {
-		this.scriptEngine.put("event", streamEventMessage.getContent());
-		this.scriptEngine.eval(this.script);
-		return (String)this.scriptEngine.get(STREAM_ANALYZER_SCRIPT_RESULT_ATTRIBUTE);
-	}
+	
 }
