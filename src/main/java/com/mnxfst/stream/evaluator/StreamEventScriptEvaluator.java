@@ -13,46 +13,63 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.mnxfst.stream.analyzer;
+package com.mnxfst.stream.evaluator;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
 import org.apache.commons.lang3.StringUtils;
 
 import akka.actor.ActorRef;
+import akka.actor.UntypedActor;
 
-import com.mnxfst.stream.AbstractStreamEventScriptEvaluator;
 import com.mnxfst.stream.message.StreamEventMessage;
 
-
 /**
- * Provides a framework for analyzing inbound {@link StreamEventMessage stream events} and
- * forwarding them to configured destinations. It receives a script, a field to fetch the 
- * result from and a map holding different result types along with message destinations.
+ * Pipeline element which receives a script during initialization and executes that against an
+ * inbound {@link StreamEventMessage message}. Depending on the result the (modified (by script)) 
+ * message is forwarded to a number of configured components. 
  * @author mnxfst
- * @since 31.01.2014
+ * @since 03.02.2014
  */
-public class StreamEventAnalyzer extends AbstractStreamEventScriptEvaluator {
-	
+public class StreamEventScriptEvaluator extends UntypedActor {
+
+	/** script engine variable that holds the event message content - if the evaluator changes anything it must be written back to this variable */ 
+	public static final String SCRIPT_EVENT_CONTENT = "eventContent";	
+	/** script engine variable that must hold the result indicator at the end of computation - aka the value which determine the forward to use */
+	public static final String SCRIPT_RESULT = "result";
+
+	/** analyzer name or identifier */
+	private final String identifier;
+	/** javascript used for analyzing inbound stream events */
+	private final String script;
+	/** scripting engine */
+	private final ScriptEngine scriptEngine;
 	/** forwarding rules */
 	private final Map<String, List<ActorRef>> forwardingRules = new HashMap<>();
-	
+
 	/**
-	 * Initializes the stream event analyzer using the provided input
+	 * Initializes the evaluator using the provided input
 	 * @param identifier
 	 * @param script
-	 * @param resultAttribute
-	 * @param forwardingRules
-	 * @param errorHandler
 	 */
-	public StreamEventAnalyzer(final String identifier, final String script, final Map<String, List<ActorRef>> forwardingRules, final ActorRef errorHandler) {		
-		super(identifier, script, errorHandler);		
-		this.forwardingRules.putAll(forwardingRules);		
+	public StreamEventScriptEvaluator(final String identifier, final String script, final Map<String, List<ActorRef>> forwardingRules, final ActorRef errorHandler) {
+		this.identifier = identifier;
+		this.script = script;
+		this.errorHandler = errorHandler;
+		this.forwardingRules.putAll(forwardingRules);
+
+		ScriptEngineManager scriptEngineManager = new ScriptEngineManager();
+		this.scriptEngine = scriptEngineManager.getEngineByName("JavaScript");
+		if(this.scriptEngine == null)
+			throw new RuntimeException("Failed to initializes script engine");
 	}
+	
 	
 	/**
 	 * @see akka.actor.UntypedActor#onReceive(java.lang.Object)
@@ -83,8 +100,34 @@ public class StreamEventAnalyzer extends AbstractStreamEventScriptEvaluator {
 			}
 
 		}		
+	}	
+	
+	/**
+	 * Applies the given script on the received {@link StreamEventMessage stream event}
+	 * @param streamEventMessage
+	 * @return holds the script response
+	 * @throws ScriptException 
+	 */
+	protected String evaluareScript(final StreamEventMessage streamEventMessage) throws ScriptException {
+		this.scriptEngine.put(SCRIPT_EVENT_CONTENT, streamEventMessage.getContent());
+		this.scriptEngine.eval(this.script);
+		String messageContent = (String)this.scriptEngine.get(SCRIPT_EVENT_CONTENT);
+		streamEventMessage.setContent(messageContent);
+		return (String)this.scriptEngine.get(SCRIPT_RESULT);
 	}
-
+	
+	/**
+	 * Reports an error to the configured {@link ActorRef error handler}
+	 * @param streamEventMessage
+	 * @param key
+	 * @param location
+	 * @param message
+	 */
+	protected void reportError(final StreamEventMessage streamEventMessage, final String key, final String location, final String message) {
+		streamEventMessage.addError(key, identifier, location, message);
+		this.errorHandler.tell(streamEventMessage, getSelf());
+	}
+	
 	/**
 	 * Forwards the {@link StreamEventMessage stream event} according to the provided script response
 	 * @param streamEventMessage
@@ -110,7 +153,5 @@ public class StreamEventAnalyzer extends AbstractStreamEventScriptEvaluator {
 			if(ref != null)
 				ref.tell(streamEventMessage, getSender());
 		}
-	}
-	
-	
+	}		
 }

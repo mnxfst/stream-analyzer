@@ -13,63 +13,73 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.mnxfst.stream.modifier;
+package com.mnxfst.stream.evaluator;
 
+import java.io.Serializable;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.mnxfst.stream.StreamEventScriptEvaluatorConfiguration;
+import com.fasterxml.jackson.annotation.JsonRootName;
 
 /**
- * Provides the configuration required for a proper {@link StreamEventModifier modifier}
- * initialization
+ * Common interface to all settings used to initialize derived instances of type {@link StreamEventScriptEvaluator}   
  * @author mnxfst
  * @since 03.02.2014
  */
-public class StreamEventModifierConfiguration implements StreamEventScriptEvaluatorConfiguration {
+@JsonRootName ( value = "scriptEvaluatorConfig" )
+public class StreamEventScriptEvaluatorConfiguration implements Serializable {
 
-	private static final long serialVersionUID = -7864121608291767788L;
-	
-	/** modifier id used for referencing the component from within other pipeline elements */ 
+	private static final long serialVersionUID = -1272357972067640074L;
+
+	/** analyzer id used for referencing the component from within other pipeline elements */ 
 	@JsonProperty( value = "identifier", required = true )
 	private String identifier = null;
 	/** script to be applied on inbound stream event messages */
 	@JsonProperty ( value = "script", required = true )
 	private String script = null;	
-	/** list of analyzers and modifiers to receive the message next */
+	/** rule set mapping a script result on a list of analyzers and modifiers to receive the message next */
 	@JsonProperty ( value = "forwardingRules", required = true )
-	private Set<String> forwardingRules = new HashSet<>();
+	private Map<String, Set<String>> forwardingRules = new HashMap<>();
 	/** reference towards component receiving all error inbound messages */
 	@JsonProperty( value = "errorHandlerId", required = true )
 	private String errorHandlerId = null;
 	
 	/**
-	 * Default constructor
+	 * Default configuration
 	 */
-	public StreamEventModifierConfiguration() {		
+	public StreamEventScriptEvaluatorConfiguration() {		
 	}
 	
 	/**
-	 * Initializes the instance using the provided content
+	 * Initializes the instance using the provided input
 	 * @param identifier
 	 * @param script
 	 * @param errorHandlerId
 	 */
-	public StreamEventModifierConfiguration(final String identifier, final String script, final String errorHandlerId) {
+	public StreamEventScriptEvaluatorConfiguration(final String identifier, final String script, final String errorHandlerId) {
 		this.identifier = identifier;
 		this.script = script;
 		this.errorHandlerId = errorHandlerId;
 	}
-		
+	
 	/**
-	 * Adds the provided list of forwards to given result of script evaluation
-	 * @param result
+	 * Adds the provided destinations as <i>forwards</i> for the given script result 
+	 * @param scriptEvaluationResult
 	 * @param forwards
 	 */
-	public void addForwardingRule(final Set<String> forwards) {
-		if(forwards != null)
-			this.forwardingRules.addAll(forwards);
+	public void addForwardingRule(final String scriptEvaluationResult, final Set<String> forwards) {
+		if(StringUtils.isNotBlank(scriptEvaluationResult) && forwards != null && !forwards.isEmpty()) {
+			Set<String> fwds = this.forwardingRules.get(scriptEvaluationResult);
+			if(fwds == null)
+				fwds = new HashSet<>();
+			fwds.addAll(forwards);
+			this.forwardingRules.put(scriptEvaluationResult, fwds);
+		}
 	}
 
 	public String getIdentifier() {
@@ -87,12 +97,12 @@ public class StreamEventModifierConfiguration implements StreamEventScriptEvalua
 	public void setScript(String script) {
 		this.script = script;
 	}
-	
-	public Set<String> getForwardingRules() {
+
+	public Map<String, Set<String>> getForwardingRules() {
 		return forwardingRules;
 	}
 
-	public void setForwardingRules(Set<String> forwardingRules) {
+	public void setForwardingRules(Map<String, Set<String>> forwardingRules) {
 		this.forwardingRules = forwardingRules;
 	}
 
@@ -103,5 +113,6 @@ public class StreamEventModifierConfiguration implements StreamEventScriptEvalua
 	public void setErrorHandlerId(String errorHandlerId) {
 		this.errorHandlerId = errorHandlerId;
 	}
-
+	
+	
 }
