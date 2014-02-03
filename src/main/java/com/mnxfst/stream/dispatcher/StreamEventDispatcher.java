@@ -121,7 +121,8 @@ public class StreamEventDispatcher extends UntypedActor {
 			 * @see akka.dispatch.OnComplete#onComplete(java.lang.Throwable, java.lang.Object)
 			 */
 			public void onComplete(Throwable error, ActorRef actorRef) throws Throwable {
-				
+			
+				// TODO this could lead to problems on initialization as the list might be added twice ... due to concurrency
 				if(error == null) {
 					List<ActorRef> pipelineEndpoints = pipelines.get(eventSourceId);
 					if(pipelineEndpoints == null)

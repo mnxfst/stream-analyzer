@@ -15,7 +15,6 @@
  */
 package com.mnxfst.stream.evaluator;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -25,6 +24,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
+import com.mnxfst.stream.processing.StreamEventProcessingNodeConfiguration;
 
 /**
  * Common interface to all settings used to initialize derived instances of type {@link StreamEventScriptEvaluator}   
@@ -32,7 +32,7 @@ import com.fasterxml.jackson.annotation.JsonRootName;
  * @since 03.02.2014
  */
 @JsonRootName ( value = "scriptEvaluatorConfig" )
-public class StreamEventScriptEvaluatorConfiguration implements Serializable {
+public class StreamEventScriptEvaluatorConfiguration implements StreamEventProcessingNodeConfiguration {
 
 	private static final long serialVersionUID = -1272357972067640074L;
 
@@ -42,12 +42,15 @@ public class StreamEventScriptEvaluatorConfiguration implements Serializable {
 	/** script to be applied on inbound stream event messages */
 	@JsonProperty ( value = "script", required = true )
 	private String script = null;	
+	/** script engine name */
+	@JsonProperty ( value = "scriptEngineName", required = true )
+	private String scriptEngineName = null; 
 	/** rule set mapping a script result on a list of analyzers and modifiers to receive the message next */
 	@JsonProperty ( value = "forwardingRules", required = true )
 	private Map<String, Set<String>> forwardingRules = new HashMap<>();
 	/** reference towards component receiving all error inbound messages */
-	@JsonProperty( value = "errorHandlerId", required = true )
-	private String errorHandlerId = null;
+	@JsonProperty( value = "errorHandlers", required = true )
+	private Map<String, Set<String>> errorHandlers = new HashMap<>();
 	
 	/**
 	 * Default configuration
@@ -59,12 +62,11 @@ public class StreamEventScriptEvaluatorConfiguration implements Serializable {
 	 * Initializes the instance using the provided input
 	 * @param identifier
 	 * @param script
-	 * @param errorHandlerId
 	 */
-	public StreamEventScriptEvaluatorConfiguration(final String identifier, final String script, final String errorHandlerId) {
+	public StreamEventScriptEvaluatorConfiguration(final String identifier, final String script, final String scriptEngineName) {
 		this.identifier = identifier;
 		this.script = script;
-		this.errorHandlerId = errorHandlerId;
+		this.scriptEngineName = scriptEngineName;
 	}
 	
 	/**
@@ -80,6 +82,21 @@ public class StreamEventScriptEvaluatorConfiguration implements Serializable {
 			fwds.addAll(forwards);
 			this.forwardingRules.put(scriptEvaluationResult, fwds);
 		}
+	}
+	
+	/**
+	 * @see com.mnxfst.stream.processing.StreamEventProcessingNodeConfiguration#addErrorHandlers(java.lang.String, java.util.Set)
+	 */
+	public void addErrorHandlers(String errorKey, Set<String> handlers) {
+
+		if(StringUtils.isNotBlank(errorKey) && handlers != null && !handlers.isEmpty()) {
+			Set<String> hdlrs = this.errorHandlers.get(errorKey);
+			if(hdlrs == null)
+				hdlrs = new HashSet<>();
+			hdlrs.addAll(handlers);
+			this.errorHandlers.put(errorKey, hdlrs);
+		}
+		
 	}
 
 	public String getIdentifier() {
@@ -98,6 +115,14 @@ public class StreamEventScriptEvaluatorConfiguration implements Serializable {
 		this.script = script;
 	}
 
+	public String getScriptEngineName() {
+		return scriptEngineName;
+	}
+
+	public void setScriptEngineName(String scriptEngineName) {
+		this.scriptEngineName = scriptEngineName;
+	}
+
 	public Map<String, Set<String>> getForwardingRules() {
 		return forwardingRules;
 	}
@@ -106,13 +131,14 @@ public class StreamEventScriptEvaluatorConfiguration implements Serializable {
 		this.forwardingRules = forwardingRules;
 	}
 
-	public String getErrorHandlerId() {
-		return errorHandlerId;
+	public Map<String, Set<String>> getErrorHandlers() {
+		return errorHandlers;
 	}
 
-	public void setErrorHandlerId(String errorHandlerId) {
-		this.errorHandlerId = errorHandlerId;
+	public void setErrorHandlers(Map<String, Set<String>> errorHandlers) {
+		this.errorHandlers = errorHandlers;
 	}
-	
+
+
 	
 }

@@ -1,4 +1,4 @@
-package com.mnxfst.stream.script;
+package com.mnxfst.stream.processing.script;
 
 import java.io.FileInputStream;
 

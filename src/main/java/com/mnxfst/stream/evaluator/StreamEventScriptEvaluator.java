@@ -15,9 +15,12 @@
  */
 package com.mnxfst.stream.evaluator;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -25,10 +28,15 @@ import javax.script.ScriptException;
 
 import org.apache.commons.lang3.StringUtils;
 
+import scala.concurrent.Future;
+import scala.concurrent.duration.FiniteDuration;
 import akka.actor.ActorRef;
-import akka.actor.UntypedActor;
+import akka.dispatch.OnComplete;
+import akka.util.Timeout;
 
+import com.mnxfst.stream.message.BindEventSourcePipelineFailedMessage;
 import com.mnxfst.stream.message.StreamEventMessage;
+import com.mnxfst.stream.processing.AbstractStreamEventProcessingNode;
 
 /**
  * Pipeline element which receives a script during initialization and executes that against an
@@ -37,40 +45,95 @@ import com.mnxfst.stream.message.StreamEventMessage;
  * @author mnxfst
  * @since 03.02.2014
  */
-public class StreamEventScriptEvaluator extends UntypedActor {
+public class StreamEventScriptEvaluator extends AbstractStreamEventProcessingNode {
 
+	/** timeout (in seconds) applied for actor selection */
+	public static final long ACTOR_SELECTION_TIMEOUT = 2;
 	/** script engine variable that holds the event message content - if the evaluator changes anything it must be written back to this variable */ 
 	public static final String SCRIPT_EVENT_CONTENT = "eventContent";	
 	/** script engine variable that must hold the result indicator at the end of computation - aka the value which determine the forward to use */
 	public static final String SCRIPT_RESULT = "result";
 
-	/** analyzer name or identifier */
-	private final String identifier;
-	/** javascript used for analyzing inbound stream events */
-	private final String script;
+	/** evaluator configuration */
+	private final StreamEventScriptEvaluatorConfiguration configuration;
 	/** scripting engine */
-	private final ScriptEngine scriptEngine;
+	private ScriptEngine scriptEngine;
 	/** forwarding rules */
 	private final Map<String, List<ActorRef>> forwardingRules = new HashMap<>();
-
+	
 	/**
 	 * Initializes the evaluator using the provided input
-	 * @param identifier
-	 * @param script
+	 * @param configuration
 	 */
-	public StreamEventScriptEvaluator(final String identifier, final String script, final Map<String, List<ActorRef>> forwardingRules, final ActorRef errorHandler) {
-		this.identifier = identifier;
-		this.script = script;
-		this.errorHandler = errorHandler;
-		this.forwardingRules.putAll(forwardingRules);
-
-		ScriptEngineManager scriptEngineManager = new ScriptEngineManager();
-		this.scriptEngine = scriptEngineManager.getEngineByName("JavaScript");
-		if(this.scriptEngine == null)
-			throw new RuntimeException("Failed to initializes script engine");
+	public StreamEventScriptEvaluator(final StreamEventScriptEvaluatorConfiguration configuration) {		
+		super(configuration);
+		this.configuration = configuration;
+		
+		if(StringUtils.isBlank(configuration.getScript()))
+			throw new RuntimeException("Missing required script");
+		if(StringUtils.isBlank(configuration.getScriptEngineName()))
+			throw new RuntimeException("Missing required script engine name");
 	}
 	
+	/**
+	 * @see akka.actor.UntypedActor#preStart()
+	 */
+	public void preStart() throws Exception {
+		super.preStart();
+
+		ScriptEngineManager scriptEngineManager = new ScriptEngineManager();
+		this.scriptEngine = scriptEngineManager.getEngineByName(configuration.getScriptEngineName());
+		if(this.scriptEngine == null)
+			throw new RuntimeException("Failed to initializes script engine '"+configuration.getScriptEngineName()+"'");
+
+		// initialize the map of forwarding rules by adding an empty destination list for each script result 
+		// to render map entry initialization later on unnecessary as it may lead to concurrency issues since 
+		// the entries added to the lists 
+		if(configuration.getForwardingRules() != null && !configuration.getForwardingRules().isEmpty()) {
+			for(final String scriptResult : configuration.getForwardingRules().keySet()) {
+			}
+		}
+				Set<String> forwards = configuration.getForwardingRules().get(scriptResult);				
+				if(forwards != null && !forwards.isEmpty()) {
+					for(String fwdRefPath : forwards) {
 	
+						Future<ActorRef> fwdRef = context().system().actorSelection(fwdRefPath).resolveOne(FiniteDuration.apply(ACTOR_SELECTION_TIMEOUT, TimeUnit.SECONDS));
+						fwdRef.onComplete(new OnComplete<ActorRef>() {
+							
+							/**
+							 * @see akka.dispatch.OnComplete#onComplete(java.lang.Throwable, java.lang.Object)
+							 */
+							public void onComplete(Throwable error, ActorRef actorRef) throws Throwable {
+								
+								if(error == null) {
+									List<ActorRef> pipelineEndpoints = pipelines.get(eventSourceId);
+									if(pipelineEndpoints == null)
+										pipelineEndpoints = new ArrayList<>();				
+									if(!pipelineEndpoints.contains(actorRef)) {
+										pipelineEndpoints.add(actorRef);
+										context().system().log().debug("Successfully registered " + actorRef + " as receiver of inbound message from " + eventSourceId);
+									} else {				
+										context().system().log().debug("A receiver already exists for " + eventSourceId);
+									}
+								} else {
+									getSender().tell(new BindEventSourcePipelineFailedMessage(eventSourceId, pipelineEndpointPath, error.getMessage()), getSelf());
+								}
+							}
+									
+						}, context().dispatcher());
+
+					}					
+				}
+			}
+		}	
+
+		
+		
+	}
+		
+
+
+
 	/**
 	 * @see akka.actor.UntypedActor#onReceive(java.lang.Object)
 	 */
@@ -82,12 +145,12 @@ public class StreamEventScriptEvaluator extends UntypedActor {
 			// analyze message with configured script
 			String response = null;
 			try {
-				response = evaluareScript(msg);
+				response = evaluateScript(msg);
 			} catch(ScriptException e) {
-				reportError(msg, "stream.analyzer.script.execution.failed", "analyzerStreamEvent", "Failed to execute script. Error: " + e.getMessage());
+				reportError(msg, "stream.script.evaluator.execution.failed", "evaluateScript", "Failed to execute script. Error: " + e.getMessage());
 				return;
 			} catch(Exception e) {
-				reportError(msg, "stream.analyzer.script.execution.general", "analyzerStreamEvent", e.getMessage());
+				reportError(msg, "stream.script.evaluator.execution.general", "evaluateScript", e.getMessage());
 				return;
 			}
 
@@ -95,7 +158,7 @@ public class StreamEventScriptEvaluator extends UntypedActor {
 			try {
 				forwardStreamEvent(msg, response);
 			} catch(Exception e) {
-				reportError(msg,"stream.analyzer.script.forwarding.general", "forwardStreamEvent", e.getMessage());
+				reportError(msg,"stream.script.evaluator.forwarding.general", "forwardStreamEvent", e.getMessage());
 				return;
 			}
 
@@ -108,7 +171,7 @@ public class StreamEventScriptEvaluator extends UntypedActor {
 	 * @return holds the script response
 	 * @throws ScriptException 
 	 */
-	protected String evaluareScript(final StreamEventMessage streamEventMessage) throws ScriptException {
+	protected String evaluateScript(final StreamEventMessage streamEventMessage) throws ScriptException {
 		this.scriptEngine.put(SCRIPT_EVENT_CONTENT, streamEventMessage.getContent());
 		this.scriptEngine.eval(this.script);
 		String messageContent = (String)this.scriptEngine.get(SCRIPT_EVENT_CONTENT);
@@ -116,17 +179,7 @@ public class StreamEventScriptEvaluator extends UntypedActor {
 		return (String)this.scriptEngine.get(SCRIPT_RESULT);
 	}
 	
-	/**
-	 * Reports an error to the configured {@link ActorRef error handler}
-	 * @param streamEventMessage
-	 * @param key
-	 * @param location
-	 * @param message
-	 */
-	protected void reportError(final StreamEventMessage streamEventMessage, final String key, final String location, final String message) {
-		streamEventMessage.addError(key, identifier, location, message);
-		this.errorHandler.tell(streamEventMessage, getSelf());
-	}
+	
 	
 	/**
 	 * Forwards the {@link StreamEventMessage stream event} according to the provided script response
