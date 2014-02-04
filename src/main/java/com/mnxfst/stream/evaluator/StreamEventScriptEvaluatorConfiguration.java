@@ -36,9 +36,15 @@ public class StreamEventScriptEvaluatorConfiguration implements StreamEventProce
 
 	private static final long serialVersionUID = -1272357972067640074L;
 
+	/** processing node class - required for dynamic node instantiation */
+	@JsonProperty ( value = "processingNodeClass", required = true )
+	private String processingNodeClass = null;
 	/** analyzer id used for referencing the component from within other pipeline elements */ 
 	@JsonProperty( value = "identifier", required = true )
 	private String identifier = null;
+	/** description */
+	@JsonProperty ( value = "description", required = false )
+	private String description = null;
 	/** script to be applied on inbound stream event messages */
 	@JsonProperty ( value = "script", required = true )
 	private String script = null;	
@@ -60,11 +66,16 @@ public class StreamEventScriptEvaluatorConfiguration implements StreamEventProce
 	
 	/**
 	 * Initializes the instance using the provided input
+	 * @param processingNodeClass
 	 * @param identifier
+	 * @param description
 	 * @param script
+	 * @param scriptEngineName
 	 */
-	public StreamEventScriptEvaluatorConfiguration(final String identifier, final String script, final String scriptEngineName) {
+	public StreamEventScriptEvaluatorConfiguration(final String processingNodeClass, final String identifier, final String description, final String script, final String scriptEngineName) {
+		this.processingNodeClass = processingNodeClass;
 		this.identifier = identifier;
+		this.description = description;
 		this.script = script;
 		this.scriptEngineName = scriptEngineName;
 	}
@@ -97,6 +108,14 @@ public class StreamEventScriptEvaluatorConfiguration implements StreamEventProce
 			this.errorHandlers.put(errorKey, hdlrs);
 		}
 		
+	}
+
+	public String getProcessingNodeClass() {
+		return processingNodeClass;
+	}
+
+	public void setProcessingNodeClass(String processingNodeClass) {
+		this.processingNodeClass = processingNodeClass;
 	}
 
 	public String getIdentifier() {
@@ -137,6 +156,14 @@ public class StreamEventScriptEvaluatorConfiguration implements StreamEventProce
 
 	public void setErrorHandlers(Map<String, Set<String>> errorHandlers) {
 		this.errorHandlers = errorHandlers;
+	}
+
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
 	}
 
 

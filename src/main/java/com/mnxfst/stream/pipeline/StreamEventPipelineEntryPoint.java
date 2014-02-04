@@ -21,11 +21,12 @@ import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 
 import akka.actor.ActorRef;
+import akka.actor.Props;
 import akka.actor.UntypedActor;
 
 import com.mnxfst.stream.evaluator.StreamEventScriptEvaluator;
-import com.mnxfst.stream.evaluator.StreamEventScriptEvaluatorConfiguration;
 import com.mnxfst.stream.message.StreamEventMessage;
+import com.mnxfst.stream.processing.StreamEventProcessingNodeConfiguration;
 
 /**
  * Represents the entry point into a {@link StreamEventMessage stream event} processing pipeline. 
@@ -40,31 +41,69 @@ import com.mnxfst.stream.message.StreamEventMessage;
  */
 public class StreamEventPipelineEntryPoint extends UntypedActor {
 
-	private final String pipelineId;
-	private final ActorRef pipelineEntryPointRef;
-	private final Map<String, StreamEventScriptEvaluatorConfiguration> streamEventScriptEvaluatorConfigurations = new HashMap<>();
+	private final StreamEventPipelineConfiguration configuration;
+	private final String pipelineEntryPointId;
+	private final Map<String, ActorRef> pipelineNodeRefs = new HashMap<>();
 	
+	// TODO error handler!!!
 	
-	public StreamEventPipelineEntryPoint(final String pipelineId, final String pipelineEntryPointId, final Map<String, StreamEventScriptEvaluatorConfiguration> streamEventScriptEvaluatorConfigurations) {
+	/**
+	 * Initializes the pipeline using the provided input 
+	 * @param configuration
+	 */
+	public StreamEventPipelineEntryPoint(final StreamEventPipelineConfiguration configuration) {
+		
+		if(configuration == null) 
+			throw new RuntimeException("Required configuration missing");
 		
 		// the pipeline identifier is required 
-		if(StringUtils.isBlank(pipelineId))
+		if(StringUtils.isBlank(configuration.getIdentifier()))
 			throw new RuntimeException("Required pipeline identifier is missing");
 		
 		// first pipeline element to pass an inbound message to is required as the pipeline work otherwise
-		if(StringUtils.isBlank(pipelineEntryPointId))
+		if(StringUtils.isBlank(configuration.getEntryPointId()))
 			throw new RuntimeException("Required pipeline entry point identifier is missing");
 		
-		if(streamEventScriptEvaluatorConfigurations.isEmpty()) 
+		if(configuration.getPipelineNodes() == null || configuration.getPipelineNodes().isEmpty()) 
 			throw new RuntimeException("Required evaluator configurations missing");
 		
-		for(String evaluatorId : streamEventScriptEvaluatorConfigurations.keySet()) {
+		this.configuration = configuration;
+		this.pipelineEntryPointId = configuration.getEntryPointId();
+	}
+		
+	/**
+	 * @see akka.actor.UntypedActor#preStart()
+	 */
+	public void preStart() throws Exception {
+		super.preStart();
+		
+		// step through nodes and initialize each one separately
+		// open topic: TODO when is preStart called on initialized actors as this loop needs to be finished for the sub-nodes to be able to initialize routes to their configured forwards
+		for(final StreamEventProcessingNodeConfiguration nodeCfg : configuration.getPipelineNodes()) {
+
+			if(nodeCfg == null) {
+				context().system().log().error("Found 'null' configuration"); // TODO more logging
+				continue;
+			}
 			
+			if(StringUtils.isBlank(nodeCfg.getProcessingNodeClass())) {
+				context().system().log().error("[pipeline="+configuration.getIdentifier()+", node="+nodeCfg.getIdentifier()+", error=processing_class_missing"); // TODO more logging and reporting toward error ndoes
+				continue;
+			}
+			
+			final ActorRef nodeRef = context().actorOf(Props.create(Class.forName(nodeCfg.getProcessingNodeClass()), nodeCfg), nodeCfg.getIdentifier()); // TODO what about round robin routers?
+			if(nodeRef != null) {
+				this.pipelineNodeRefs.put(nodeCfg.getIdentifier(), nodeRef);
+			} else {
+				context().system().log().error("Failed to initialize node " + nodeCfg.getIdentifier()); // TODO more logging
+			}			
 		}
 		
-//		this.pipelineEntryPointRef = null;
-//		this.pipelineEntryPointRef = context().system().actorSelection(pipelineEntryPointId).resolveOne(timeout)
-		
+		// if the pipeline misses the configured entry point, this is an invalid state as inbound message cannot be handed over to the pipeline
+		if(!this.pipelineNodeRefs.containsKey(pipelineEntryPointId)) {
+			throw new RuntimeException("Failed to initialize pipeline '"+configuration.getIdentifier()+"' as entry point is missing");
+		}
+			
 	}
 	
 	/**
@@ -72,6 +111,10 @@ public class StreamEventPipelineEntryPoint extends UntypedActor {
 	 */
 	public void onReceive(Object message) throws Exception {
 		
+		// fetch inbound message, check its type and forward it to the first pipeline node 
+		if(message instanceof StreamEventMessage) {			
+			final ActorRef entryPointRef = this.pipelineNodeRefs.get(pipelineEntryPointId);
+			entryPointRef.tell(message, getSender());
+		}		
 	}
-
 }

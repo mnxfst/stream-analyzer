@@ -15,8 +15,6 @@
  */
 package com.mnxfst.stream.evaluator;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -34,7 +32,6 @@ import scala.concurrent.duration.FiniteDuration;
 import akka.actor.ActorRef;
 import akka.dispatch.OnComplete;
 
-import com.mnxfst.stream.message.BindEventSourcePipelineFailedMessage;
 import com.mnxfst.stream.message.StreamEventMessage;
 import com.mnxfst.stream.processing.AbstractStreamEventProcessingNode;
 
@@ -176,7 +173,7 @@ public class StreamEventScriptEvaluator extends AbstractStreamEventProcessingNod
 	 */
 	protected String evaluateScript(final StreamEventMessage streamEventMessage) throws ScriptException {
 		this.scriptEngine.put(SCRIPT_EVENT_CONTENT, streamEventMessage.getContent());
-		this.scriptEngine.eval(this.script);
+		this.scriptEngine.eval(this.configuration.getScript());
 		String messageContent = (String)this.scriptEngine.get(SCRIPT_EVENT_CONTENT);
 		streamEventMessage.setContent(messageContent);
 		return (String)this.scriptEngine.get(SCRIPT_RESULT);
@@ -198,7 +195,7 @@ public class StreamEventScriptEvaluator extends AbstractStreamEventProcessingNod
 		}
 			
 		// fetch the receivers configured for the script response, otherwise forward the message to the error handler
-		List<ActorRef> forwards = this.forwardingRules.get(scriptResponse);
+		ConcurrentHashSet<ActorRef> forwards = this.forwardingRules.get(scriptResponse);
 		if(forwards == null || forwards.isEmpty()) {
 			reportError(streamEventMessage, "stream.analyzer.script.forwarding.noRules", "forwardStreamEvent", "no forwarding rule found for response");
 			return;

@@ -108,6 +108,4 @@ public class StreamEventPipelineConfiguration implements Serializable {
 			List<StreamEventProcessingNodeConfiguration> pipelineNodes) {
 		this.pipelineNodes = pipelineNodes;
 	}
-	
-	
 }

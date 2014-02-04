@@ -19,17 +19,34 @@ import java.io.Serializable;
 import java.util.Map;
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonRootName;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.mnxfst.stream.evaluator.StreamEventScriptEvaluatorConfiguration;
+import com.mnxfst.stream.persistence.StreamEventESWriterConfiguration;
+
 /**
  * Common interface to all settings used for setting up {@link AbstractStreamEventProcessingNode stream event processing nodes}
  * @author mnxfst
  * @since 03.02.2014
  */
+@JsonRootName ( value = "nodeConfiguration" )
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
+@JsonSubTypes ({ @JsonSubTypes.Type(StreamEventScriptEvaluatorConfiguration.class), @JsonSubTypes.Type( StreamEventESWriterConfiguration.class) })
 public interface StreamEventProcessingNodeConfiguration extends Serializable {
 
+	/** get processing node class */
+	public String getProcessingNodeClass();
+	/** set processing node clas */
+	public void setProcessingNodeClass(String processingNodeClass);
 	/** Returns the unique node identifier */
 	public String getIdentifier();
 	/** Sets the unique node identifier */
 	public void setIdentifier(String identifier);
+	/** Returns the description */
+	public String getDescription();
+	/** sets the description */
+	public void setDescription(final String description);
 	/** returns the error handlers */
 	public Map<String, Set<String>> getErrorHandlers();
 	/** sets the error handlers */
