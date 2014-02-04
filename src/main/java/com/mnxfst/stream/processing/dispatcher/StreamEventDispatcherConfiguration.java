@@ -16,8 +16,15 @@
 package com.mnxfst.stream.processing.dispatcher;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
+import com.mnxfst.stream.processing.pipeline.StreamEventPipelineConfiguration;
 
 /**
  * Holds configuration required to initialize {@link StreamEventDispatcher stream event dispatcher}
@@ -29,6 +36,26 @@ public class StreamEventDispatcherConfiguration implements Serializable {
 
 	private static final long serialVersionUID = -8557324052827634194L;
 
-//	@JsonProperty ( value = "")
+	/** unique dispatcher identifier */
+	@JsonProperty ( value = "dispatcherId", required = true )
+	private String identifier = null;
+	/** pipeline description */
+	@JsonProperty ( value = "description", required = true )
+	private String description = null;
+	/** pipeline configurations */
+	@JsonProperty ( value = "pipelineConfigurations", required = true )
+	private List<StreamEventPipelineConfiguration> pipelineConfigurations = new ArrayList<>();
+	/** mappings of event sources towards pipelines */
+	@JsonProperty ( value = "eventSourcePipelines", required = true )
+	private Map<String, Set<String>> eventSourcePipelines = new HashMap<>();
+	
+	/**
+	 * Default constructor
+	 */
+	public StreamEventDispatcherConfiguration() {		
+	}
+	
+//	public StreamEventDispatcherConfiguration(final String dispatcherId, final String description, final St
+	
 	
 }

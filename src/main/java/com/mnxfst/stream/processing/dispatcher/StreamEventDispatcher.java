@@ -43,6 +43,8 @@ public class StreamEventDispatcher extends UntypedActor {
 	
 	private final int ACTOR_SELECTION_TIMEOUT = 2; // seconds
 	
+
+	
 	/** mapping from event source identifier towards the entry point of an processing pipeline */
 	private final Map<String, List<ActorRef>> pipelines = new HashMap<>();
 	
