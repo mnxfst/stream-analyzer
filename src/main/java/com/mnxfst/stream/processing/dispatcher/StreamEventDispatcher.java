@@ -15,39 +15,58 @@
  */
 package com.mnxfst.stream.processing.dispatcher;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
+import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 
-import scala.concurrent.Future;
 import akka.actor.ActorRef;
 import akka.actor.UntypedActor;
-import akka.dispatch.OnComplete;
-import akka.util.Timeout;
 
-import com.mnxfst.stream.processing.message.BindEventSourcePipelineFailedMessage;
 import com.mnxfst.stream.processing.message.StreamEventMessage;
 
 /**
  * Receives all inbound {@link StreamEventMessage events}, analyzes the contained 
  * {@link StreamEventMessage#getEventSourceId() source identifier} and dispatches 
- * the message to the configured pipelines. 
+ * the message to the configured pipelines.
+ * 
  * @author mnxfst
  * @since Jan 30, 2014
  */
 public class StreamEventDispatcher extends UntypedActor {
 	
-	private final int ACTOR_SELECTION_TIMEOUT = 2; // seconds
+	/** dispatcher configuration */
+	private final StreamEventDispatcherConfiguration configuration;
 	
+	/** mapping from pipeline identifiers towards the initial node references */
+	private Map<String, ActorRef> pipelines = new HashMap<>();
+	/** mapping of event source towards a set pipelines that receive inbound messages of that source */
+	private Map<String, Set<String>> eventSourcePipelines = new HashMap<>();
+	
+	/**
+	 * Initializes the dispatcher using the provided input
+	 * @param configuration
+	 */
+	public StreamEventDispatcher(final StreamEventDispatcherConfiguration configuration) {		
+		if(configuration == null)
+			throw new RuntimeException("Missing required configuration");
+		if(configuration.getPipelines() == null || configuration.getPipelines().isEmpty())
+			throw new RuntimeException("Missing required pipeline configurations");
+		if(configuration.getEventSourcePipelines() == null || configuration.getEventSourcePipelines().isEmpty())
+			throw new RuntimeException("Missing required event source-to-pipelines mappings");
+		this.configuration = configuration;
+	}
+	
+	/**
+	 * @see akka.actor.UntypedActor#preStart()
+	 */
+	public void preStart() throws Exception {
+		super.preStart();
+		this.pipelines = this.configuration.getPipelines();
+		this.eventSourcePipelines = this.configuration.getEventSourcePipelines();
+	}
 
-	
-	/** mapping from event source identifier towards the entry point of an processing pipeline */
-	private final Map<String, List<ActorRef>> pipelines = new HashMap<>();
-	
 	/**
 	 * @see akka.actor.UntypedActor#onReceive(java.lang.Object)
 	 */
@@ -81,69 +100,20 @@ public class StreamEventDispatcher extends UntypedActor {
 		}
 		
 		// event source identifier must point to a processing pipeline
-		if(!this.pipelines.containsKey(msg.getEventSourceId())) {
+		if(!this.eventSourcePipelines.containsKey(msg.getEventSourceId())) {
 			// TODO  any more logging required?
 			context().system().log().error("No pipeline found for event source identifier '"+msg.getEventSourceId()+"'. Ignoring message."); 
 			return;
 		}
 		
-		// fetch the pipeline entry points and ensure that the list holds some references
-		List<ActorRef> pipelineEntryPoints = this.pipelines.get(msg.getEventSourceId());
-		if(pipelineEntryPoints == null || pipelineEntryPoints.isEmpty()) {
-			// TODO any more logging required?
-			context().system().log().error("Pipelines found for event source identifier '"+msg.getEventSourceId()+"' but no entry points found. Ignoring message.");
-			return;
-		}
-	
-		// step through endpoint references and forward message to each one found
-		for(ActorRef entryPoint : pipelineEntryPoints) {
-			if(entryPoint != null) {
-				entryPoint.tell(msg, getSelf());
+		Set<String> pipelineIdentifiers = this.eventSourcePipelines.get(msg.getEventSourceId());
+		if(pipelineIdentifiers != null && !pipelineIdentifiers.isEmpty()) {
+			for(String pipelineId : pipelineIdentifiers) {
+				ActorRef pipelineEntryPointRef = this.pipelines.get(pipelineId);
+				pipelineEntryPointRef.tell(msg, getSelf());
 			}
+		} else {
+			context().system().log().error("No pipeline found for event source identifier '"+msg.getEventSourceId()+"'. Ignoring message.");
 		}
-
-		context().system().log().debug("Forwarded inbound message from " + msg.getEventSourceId() + 
-				" to " + pipelineEntryPoints.size() + " pipelines");		
-	}
-	
-	/**
-	 * Looks up the {@link ActorRef pipeline endpoint} referenced and binds the given event source
-	 * identifier to it.
-	 * @param eventSourceId
-	 * @param pipelineEndpointPath
-	 */
-	protected void bindEventSourcePipeline(final String eventSourceId, final String pipelineEndpointPath) {
-		
-		// fetch the actor referenced by the pipeline endpoint path
-		// if the (async!) lookup fails a notification is send towards the
-		// origin sender otherwise the pipeline endpoint is referenced by
-		// the event source as receiver of inbound events
-		Future<ActorRef> actorRef = context().system().actorSelection(pipelineEndpointPath).resolveOne(
-				Timeout.apply(ACTOR_SELECTION_TIMEOUT, TimeUnit.SECONDS));		
-		actorRef.onComplete(new OnComplete<ActorRef>() {
-
-			/**
-			 * @see akka.dispatch.OnComplete#onComplete(java.lang.Throwable, java.lang.Object)
-			 */
-			public void onComplete(Throwable error, ActorRef actorRef) throws Throwable {
-			
-				// TODO this could lead to problems on initialization as the list might be added twice ... due to concurrency
-				if(error == null) {
-					List<ActorRef> pipelineEndpoints = pipelines.get(eventSourceId);
-					if(pipelineEndpoints == null)
-						pipelineEndpoints = new ArrayList<>();				
-					if(!pipelineEndpoints.contains(actorRef)) {
-						pipelineEndpoints.add(actorRef);
-						context().system().log().debug("Successfully registered " + actorRef + " as receiver of inbound message from " + eventSourceId);
-					} else {				
-						context().system().log().debug("A receiver already exists for " + eventSourceId);
-					}
-				} else {
-					getSender().tell(new BindEventSourcePipelineFailedMessage(eventSourceId, pipelineEndpointPath, error.getMessage()), getSelf());
-				}
-			}
-			
-		}, context().dispatcher());
-		
 	}
 }
