@@ -23,14 +23,16 @@ import org.apache.commons.lang3.StringUtils;
 import akka.actor.ActorRef;
 import akka.actor.UntypedActor;
 
+import com.mnxfst.stream.evaluator.StreamEventScriptEvaluator;
 import com.mnxfst.stream.evaluator.StreamEventScriptEvaluatorConfiguration;
 import com.mnxfst.stream.message.StreamEventMessage;
 
 /**
  * Represents the entry point into a {@link StreamEventMessage stream event} processing pipeline. 
- * It holds a list of {@link StreamEventAnalyzer analyzers} and {@link StreamEventModifier modifiers} 
- * which are processed in order as provided. During pipeline initialization each component receives
- * its very own configuration data required for a proper setup.
+ * It holds a list of {@link StreamEventScriptEvaluator script evaluators} which are processed in 
+ * order as provided. During pipeline initialization each component receives its very own configuration 
+ * data required for a proper setup. The entry point is the root to all pipeline bound elements but 
+ * is allowed to reference external components as well, eg. database writer.
  * 
  * TODO must initialize all nodes before!
  * @author mnxfst

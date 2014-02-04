@@ -16,10 +16,10 @@
 package com.mnxfst.stream.evaluator;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 import javax.script.ScriptEngine;
@@ -27,12 +27,12 @@ import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
 import org.apache.commons.lang3.StringUtils;
+import org.eclipse.jetty.util.ConcurrentHashSet;
 
 import scala.concurrent.Future;
 import scala.concurrent.duration.FiniteDuration;
 import akka.actor.ActorRef;
 import akka.dispatch.OnComplete;
-import akka.util.Timeout;
 
 import com.mnxfst.stream.message.BindEventSourcePipelineFailedMessage;
 import com.mnxfst.stream.message.StreamEventMessage;
@@ -59,7 +59,7 @@ public class StreamEventScriptEvaluator extends AbstractStreamEventProcessingNod
 	/** scripting engine */
 	private ScriptEngine scriptEngine;
 	/** forwarding rules */
-	private final Map<String, List<ActorRef>> forwardingRules = new HashMap<>();
+	private final Map<String, ConcurrentHashSet<ActorRef>> forwardingRules = new ConcurrentHashMap<>();
 	
 	/**
 	 * Initializes the evaluator using the provided input
@@ -89,13 +89,16 @@ public class StreamEventScriptEvaluator extends AbstractStreamEventProcessingNod
 		// initialize the map of forwarding rules by adding an empty destination list for each script result 
 		// to render map entry initialization later on unnecessary as it may lead to concurrency issues since 
 		// the entries added to the lists 
+		// TODO test this thoroughly!!!
 		if(configuration.getForwardingRules() != null && !configuration.getForwardingRules().isEmpty()) {
 			for(final String scriptResult : configuration.getForwardingRules().keySet()) {
+				this.forwardingRules.put(scriptResult, new ConcurrentHashSet<ActorRef>());
 			}
-		}
+
+			for(final String scriptResult : configuration.getForwardingRules().keySet()) {		
 				Set<String> forwards = configuration.getForwardingRules().get(scriptResult);				
 				if(forwards != null && !forwards.isEmpty()) {
-					for(String fwdRefPath : forwards) {
+					for(final String fwdRefPath : forwards) {
 	
 						Future<ActorRef> fwdRef = context().system().actorSelection(fwdRefPath).resolveOne(FiniteDuration.apply(ACTOR_SELECTION_TIMEOUT, TimeUnit.SECONDS));
 						fwdRef.onComplete(new OnComplete<ActorRef>() {
@@ -106,17 +109,17 @@ public class StreamEventScriptEvaluator extends AbstractStreamEventProcessingNod
 							public void onComplete(Throwable error, ActorRef actorRef) throws Throwable {
 								
 								if(error == null) {
-									List<ActorRef> pipelineEndpoints = pipelines.get(eventSourceId);
-									if(pipelineEndpoints == null)
-										pipelineEndpoints = new ArrayList<>();				
-									if(!pipelineEndpoints.contains(actorRef)) {
-										pipelineEndpoints.add(actorRef);
-										context().system().log().debug("Successfully registered " + actorRef + " as receiver of inbound message from " + eventSourceId);
+									ConcurrentHashSet<ActorRef> forwards = forwardingRules.get(scriptResult);									
+									if(forwards == null)
+										forwards = new ConcurrentHashSet<ActorRef>();				
+									if(!forwards.contains(actorRef)) {
+										forwards.add(actorRef);
+										context().system().log().debug("Successfully registered " + actorRef + " as forward destination for " + scriptResult);
 									} else {				
-										context().system().log().debug("A receiver already exists for " + eventSourceId);
+										context().system().log().debug("An identical forward destination already exists for " + scriptResult);
 									}
 								} else {
-									getSender().tell(new BindEventSourcePipelineFailedMessage(eventSourceId, pipelineEndpointPath, error.getMessage()), getSelf());
+									throw new RuntimeException("Failed to fetch the actor reference for " + fwdRefPath + ". Reason: " + error.getMessage(), error);
 								}
 							}
 									
