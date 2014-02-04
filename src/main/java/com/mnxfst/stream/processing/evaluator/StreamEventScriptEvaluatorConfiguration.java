@@ -57,9 +57,6 @@ public class StreamEventScriptEvaluatorConfiguration implements StreamEventProce
 	/** rule set mapping a script result on a list of analyzers and modifiers to receive the message next */
 	@JsonProperty ( value = "forwardingRules", required = true )
 	private Map<String, Set<String>> forwardingRules = new HashMap<>();
-	/** reference towards component receiving all error inbound messages */
-	@JsonProperty( value = "errorHandlers", required = true )
-	private Map<String, Set<String>> errorHandlers = new HashMap<>();
 	
 	/**
 	 * Default configuration
@@ -97,21 +94,6 @@ public class StreamEventScriptEvaluatorConfiguration implements StreamEventProce
 			fwds.addAll(forwards);
 			this.forwardingRules.put(scriptEvaluationResult, fwds);
 		}
-	}
-	
-	/**
-	 * @see com.mnxfst.stream.processing.StreamEventProcessingNodeConfiguration#addErrorHandlers(java.lang.String, java.util.Set)
-	 */
-	public void addErrorHandlers(String errorKey, Set<String> handlers) {
-
-		if(StringUtils.isNotBlank(errorKey) && handlers != null && !handlers.isEmpty()) {
-			Set<String> hdlrs = this.errorHandlers.get(errorKey);
-			if(hdlrs == null)
-				hdlrs = new HashSet<>();
-			hdlrs.addAll(handlers);
-			this.errorHandlers.put(errorKey, hdlrs);
-		}
-		
 	}
 
 	public String getProcessingNodeClass() {
@@ -152,14 +134,6 @@ public class StreamEventScriptEvaluatorConfiguration implements StreamEventProce
 
 	public void setForwardingRules(Map<String, Set<String>> forwardingRules) {
 		this.forwardingRules = forwardingRules;
-	}
-
-	public Map<String, Set<String>> getErrorHandlers() {
-		return errorHandlers;
-	}
-
-	public void setErrorHandlers(Map<String, Set<String>> errorHandlers) {
-		this.errorHandlers = errorHandlers;
 	}
 
 	public String getDescription() {

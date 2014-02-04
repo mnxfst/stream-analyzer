@@ -16,20 +16,18 @@
 package com.mnxfst.stream.processing;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.mnxfst.stream.message.PipelineNodeReferencesMessage;
-import com.mnxfst.stream.message.StreamEventMessage;
-import com.mnxfst.stream.processing.evaluator.StreamEventScriptEvaluator;
-import com.mnxfst.stream.processing.persistence.StreamEventESWriter;
-import com.mnxfst.stream.processing.pipeline.StreamEventPipelineEntryPoint;
-
 import akka.actor.ActorRef;
 import akka.actor.UntypedActor;
+
+import com.mnxfst.stream.processing.evaluator.StreamEventScriptEvaluator;
+import com.mnxfst.stream.processing.message.PipelineNodeReferencesMessage;
+import com.mnxfst.stream.processing.message.StreamEventMessage;
+import com.mnxfst.stream.processing.persistence.StreamEventESWriter;
+import com.mnxfst.stream.processing.pipeline.StreamEventPipelineEntryPoint;
 
 /**
  * Common base class to all {@link StreamEventMessage stream event} processing nodes, like
@@ -45,10 +43,8 @@ public abstract class AbstractStreamEventProcessingNode extends UntypedActor {
 
 	/** analyzer name or identifier */
 	private final String identifier;
-	/** error handler references */
-	private final Map<String, Set<String>> errorHandlerConfig = new HashMap<>();
-	/** error handlers - 1..n per error type (default is required) */
-	private final Map<String, Set<ActorRef>> errorHandlers = new HashMap<>();
+	/** error handlers - one per error type (default is required) */
+	private final Map<String, ActorRef> errorHandlers = new HashMap<>();
 
 	/**
 	 * Initializes the node using the provided input
@@ -61,19 +57,32 @@ public abstract class AbstractStreamEventProcessingNode extends UntypedActor {
 			throw new RuntimeException("Required configuration missing");		
 		if(StringUtils.isBlank(configuration.getIdentifier()))
 			throw new RuntimeException("Required node identifier missing");
-		
-		//configuration.getErrorHandlers()
-		
-		this.identifier = configuration.getIdentifier();
-		this.errorHandlerConfig.putAll(configuration.getErrorHandlers());
 
-		continue with error handlers
-		// TODO lookup error handlers
-		
-		if(!this.errorHandlerConfig.containsKey(DEFAULT_ERROR_HANDLER)) 
-			throw new RuntimeException("Missing default error handler");
+		this.identifier = configuration.getIdentifier();
 	}
 	
+	/**
+	 * Processes the inbound event
+	 * @param message
+	 * @throws Exception
+	 */
+	protected abstract void processEvent(Object message) throws Exception;
+	
+	/**
+	 * @see akka.actor.UntypedActor#onReceive(java.lang.Object)
+	 */
+	public void onReceive(Object message) throws Exception {
+		
+		if(message instanceof PipelineNodeReferencesMessage) {
+			registerErrorHandlers((PipelineNodeReferencesMessage)message);
+		}
+		
+		processEvent(message);
+		
+	}
+
+
+
 	/**
 	 * Reports an error to the configured {@link ActorRef error handler}
 	 * @param streamEventMessage
@@ -87,17 +96,14 @@ public abstract class AbstractStreamEventProcessingNode extends UntypedActor {
 		streamEventMessage.addError(key, identifier, location, message);
 
 		// lookup error handler(s)
-		Set<ActorRef> keySpecificErrorHandlers = this.errorHandlers.get(key);
-		if(keySpecificErrorHandlers == null || keySpecificErrorHandlers.isEmpty())
-			keySpecificErrorHandlers = this.errorHandlers.get(DEFAULT_ERROR_HANDLER);
+		ActorRef keySpecificErrorHandler = this.errorHandlers.get(key);
+		if(keySpecificErrorHandler == null)
+			keySpecificErrorHandler = this.errorHandlers.get(DEFAULT_ERROR_HANDLER);
 		
-		
-		if(keySpecificErrorHandlers != null) {
-			// forward message
-			for(ActorRef ar : keySpecificErrorHandlers)
-				ar.tell(streamEventMessage, getSelf());
+		if(keySpecificErrorHandler != null) {
+			keySpecificErrorHandler.tell(streamEventMessage, getSelf());
 		} else {
-			context().system().log().error("Error handler configuration invalid. Failed to report: " + key + "/"+location+"/"+message);
+			context().system().log().error("Invalid error handler configuration found. Failed to report: " + key + "/"+location+"/"+message);
 		}
 	}
 	
@@ -105,16 +111,22 @@ public abstract class AbstractStreamEventProcessingNode extends UntypedActor {
 	 * Register {@link PipelineNodeReferencesMessage#getErrorHandlerReferences() error handlers} 
 	 * @param refMessage
 	 */
-	protected void registerErrorHandlers(final PipelineNodeReferencesMessage refMessage) {
+	private void registerErrorHandlers(final PipelineNodeReferencesMessage refMessage) {
 		
 		// inbound message must neither be null nor must its node references map be empty
 		if(refMessage == null)
 			return;
 		if(refMessage.getErrorHandlerReferences() == null || refMessage.getErrorHandlerReferences().isEmpty())
-			return; // TODO valid
+			return; 
 
-		
+		// copy error handlers
+		for(final String errorKey : refMessage.getErrorHandlerReferences().keySet()) {
+			this.errorHandlers.put(errorKey, refMessage.getErrorHandlerReferences().get(errorKey));
+		}
+
+		// ensure that the error handlers contain at least the default handler
+		if(!this.errorHandlers.containsKey(DEFAULT_ERROR_HANDLER)) 
+			throw new RuntimeException("Missing default error handler");
 	}
 	
-	// TODO error handler registration
 }

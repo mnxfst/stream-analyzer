@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.mnxfst.stream.message;
+package com.mnxfst.stream.processing.message;
 
 import java.io.Serializable;
 
@@ -21,15 +21,16 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
 
 /**
- * Indicates that binding an {@link StreamEventMessage#getEventSourceId() event source identifier}
- * to pipeline failed for some reason.
+ * Notifies the receivers about binding an {@link StreamEventMessage#getEventSourceId() event source}
+ * with a processing pipeline. The message provides the name of the event source and holds a 
+ * reference towards the pipeline entry point.
  * @author mnxfst
  * @since Jan 30, 2014
  */
-@JsonRootName ( "bindEventSourceFailed")
-public class BindEventSourcePipelineFailedMessage implements Serializable {
+@JsonRootName ( value = "bindEventSource" )
+public class BindEventSourcePipelineMessage implements Serializable {
 
-	private static final long serialVersionUID = 4008315256229394362L;
+	private static final long serialVersionUID = -7607952214303140241L;
 
 	/** references the event source that must be processed by the referenced pipeline endpoint */
 	@JsonProperty ( value = "eventSourceId", required = true )
@@ -39,10 +40,6 @@ public class BindEventSourcePipelineFailedMessage implements Serializable {
 	@JsonProperty ( value = "pipelineEntryPointRef", required = true )
 	private String pipelineEntryPointRef = null;
 	
-	/** error message */
-	@JsonProperty ( value = "errorMessage", required = true )
-	private String errorMessage = null;
-	
 	/** message timestamp */
 	@JsonProperty ( value = "timestamp", required = true )
 	private long timestamp = System.currentTimeMillis();
@@ -50,7 +47,7 @@ public class BindEventSourcePipelineFailedMessage implements Serializable {
 	/**
 	 * Default constructor
 	 */
-	public BindEventSourcePipelineFailedMessage() {		
+	public BindEventSourcePipelineMessage() {		
 	}
 	
 	/**
@@ -58,10 +55,9 @@ public class BindEventSourcePipelineFailedMessage implements Serializable {
 	 * @param eventSourceId
 	 * @param pipelineEntryPointRef
 	 */
-	public BindEventSourcePipelineFailedMessage(final String eventSourceId, final String pipelineEntryPointRef, final String errorMessage) {
+	public BindEventSourcePipelineMessage(final String eventSourceId, final String pipelineEntryPointRef) {
 		this.eventSourceId = eventSourceId;
 		this.pipelineEntryPointRef = pipelineEntryPointRef;
-		this.errorMessage = errorMessage;
 	}
 
 	public String getEventSourceId() {
@@ -88,5 +84,4 @@ public class BindEventSourcePipelineFailedMessage implements Serializable {
 		this.timestamp = timestamp;
 	}
 	
-
 }

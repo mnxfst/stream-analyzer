@@ -28,9 +28,9 @@ import org.apache.commons.lang3.StringUtils;
 
 import akka.actor.ActorRef;
 
-import com.mnxfst.stream.message.PipelineNodeReferencesMessage;
-import com.mnxfst.stream.message.StreamEventMessage;
 import com.mnxfst.stream.processing.AbstractStreamEventProcessingNode;
+import com.mnxfst.stream.processing.message.PipelineNodeReferencesMessage;
+import com.mnxfst.stream.processing.message.StreamEventMessage;
 
 /**
  * Pipeline element which receives a script during initialization and executes that against an
@@ -82,11 +82,11 @@ public class StreamEventScriptEvaluator extends AbstractStreamEventProcessingNod
 			throw new RuntimeException("Failed to initializes script engine '"+configuration.getScriptEngineName()+"'");
 		
 	}
-		
+
 	/**
-	 * @see akka.actor.UntypedActor#onReceive(java.lang.Object)
+	 * @see com.mnxfst.stream.processing.AbstractStreamEventProcessingNode#processEvent(java.lang.Object)
 	 */
-	public void onReceive(Object message) throws Exception {
+	protected void processEvent(Object message) throws Exception {
 		
 		if(message instanceof StreamEventMessage) {
 			StreamEventMessage msg = (StreamEventMessage)message;
@@ -128,8 +128,6 @@ public class StreamEventScriptEvaluator extends AbstractStreamEventProcessingNod
 		streamEventMessage.setContent(messageContent);
 		return (String)this.scriptEngine.get(SCRIPT_RESULT);
 	}
-	
-	
 	
 	/**
 	 * Forwards the {@link StreamEventMessage stream event} according to the provided script response
@@ -194,6 +192,6 @@ public class StreamEventScriptEvaluator extends AbstractStreamEventProcessingNod
 			
 			this.forwardingRules.put(expectedScriptResult, procNodeReferences);
 		}		
-		System.out.println("Registered forwards: " + forwardingRules.size());
+		
 	}
 }

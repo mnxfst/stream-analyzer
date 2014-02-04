@@ -18,9 +18,10 @@ package com.mnxfst.stream.processing.persistence;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 
-import com.mnxfst.stream.message.StreamEventMessage;
-import com.mnxfst.stream.model.TransportAddress;
 import com.mnxfst.stream.processing.AbstractStreamEventProcessingNode;
+import com.mnxfst.stream.processing.message.PipelineNodeReferencesMessage;
+import com.mnxfst.stream.processing.message.StreamEventMessage;
+import com.mnxfst.stream.processing.model.TransportAddress;
 
 /**
  * Writes the {@link StreamEventMessage#getContent() content} of a {@link StreamEventMessage stream event} to a configured
@@ -56,22 +57,21 @@ public class StreamEventESWriter extends AbstractStreamEventProcessingNode {
 			throw new RuntimeException("No elasticsearch cluster node configurations found");
 		
 		// create a new elasticsearch client and add transports according to provided host configurations
-//		this.esClient = new TransportClient();
-//		
-//		for(TransportAddress hostConfig : configuration.getEsClusterNodes()) {
-//			if(hostConfig != null) 
-//				this.esClient.addTransportAddress(new InetSocketTransportAddress(hostConfig.getHost(), hostConfig.getPort()));
-//		}
+		this.esClient = new TransportClient();
+		
+		for(TransportAddress hostConfig : configuration.getEsClusterNodes()) {
+			if(hostConfig != null) 
+				this.esClient.addTransportAddress(new InetSocketTransportAddress(hostConfig.getHost(), hostConfig.getPort()));
+		}
 		
 	}
 
-
-
 	/**
-	 * @see akka.actor.UntypedActor#onReceive(java.lang.Object)
+	 * @see com.mnxfst.stream.processing.AbstractStreamEventProcessingNode#processEvent(java.lang.Object)
 	 */
-	public void onReceive(Object message) throws Exception {
-			if(message instanceof StreamEventMessage) {
+	protected void processEvent(Object message) throws Exception {
+
+		if(message instanceof StreamEventMessage) {
 			StreamEventMessage msg = (StreamEventMessage)message;
 //			if(StringUtils.isNotBlank(msg.getContent()))
 //				this.esClient.prepareIndex(index, type).setSource(msg.getContent()).execute().actionGet();

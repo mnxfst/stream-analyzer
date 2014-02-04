@@ -13,12 +13,12 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.mnxfst.stream.model;
+package com.mnxfst.stream.processing.model;
 
 import java.io.Serializable;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.mnxfst.stream.message.StreamEventMessage;
+import com.mnxfst.stream.processing.message.StreamEventMessage;
 
 /**
  * Error element which is added to the {@link StreamEventMessage stream event} on demand

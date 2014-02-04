@@ -19,13 +19,13 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.mnxfst.stream.processing.dispatcher.StreamEventDispatcher;
-
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
 import akka.testkit.JavaTestKit;
 import akka.testkit.TestActorRef;
+
+import com.mnxfst.stream.processing.dispatcher.StreamEventDispatcher;
 
 /**
  * Test cases for {@link StreamEventDispatcher}
@@ -52,7 +52,7 @@ public class StreamEventDispatcherTest {
 		
 		ActorRef lookup = actorSystem.actorOf(Props.create(StreamEventDispatcher.class), "testme");
 		TestActorRef<StreamEventDispatcher> sed = TestActorRef.create(actorSystem, (Props.create(StreamEventDispatcher.class)));
-		sed.underlyingActor().bindEventSourcePipeline("test", "wd");;
+//		sed.underlyingActor().bindEventSourcePipeline("test", "wd");;
 		System.out.println("hello");
 		
 	

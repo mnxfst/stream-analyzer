@@ -15,17 +15,13 @@
  */
 package com.mnxfst.stream.processing.persistence;
 
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
-
-import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
-import com.mnxfst.stream.model.TransportAddress;
 import com.mnxfst.stream.processing.StreamEventProcessingNodeConfiguration;
+import com.mnxfst.stream.processing.model.TransportAddress;
 
 /**
  * Configuration required for {@link StreamEventESWriter elasticsearch writer} initialization
@@ -49,9 +45,6 @@ public class StreamEventESWriterConfiguration implements StreamEventProcessingNo
 	/** number of node instances - value of less than 1 avoids the instantiation of any router */
 	@JsonProperty ( value = "numOfNodeInstances", required = true )
 	private int numOfNodeInstances = 0; // value o
-	/** reference towards component receiving all error inbound messages */
-	@JsonProperty( value = "errorHandlers", required = true )
-	private Map<String, Set<String>> errorHandlers = new HashMap<>();
 	/** index to write inbound events to */
 	@JsonProperty ( value = "esIndex", required = true )
 	private String esIndex = null;
@@ -96,21 +89,6 @@ public class StreamEventESWriterConfiguration implements StreamEventProcessingNo
 		this.esClusterNodes.add(new TransportAddress(host, port));
 	}
 
-	/**
-	 * @see com.mnxfst.stream.processing.StreamEventProcessingNodeConfiguration#addErrorHandlers(java.lang.String, java.util.Set)
-	 */
-	public void addErrorHandlers(String errorKey, Set<String> handlers) {
-
-		if(StringUtils.isNotBlank(errorKey) && handlers != null && !handlers.isEmpty()) {
-			Set<String> hdlrs = this.errorHandlers.get(errorKey);
-			if(hdlrs == null)
-				hdlrs = new HashSet<>();
-			hdlrs.addAll(handlers);
-			this.errorHandlers.put(errorKey, hdlrs);
-		}
-		
-	}
-
 	public String getProcessingNodeClass() {
 		return processingNodeClass;
 	}
@@ -133,14 +111,6 @@ public class StreamEventESWriterConfiguration implements StreamEventProcessingNo
 
 	public void setDescription(String description) {
 		this.description = description;
-	}
-
-	public Map<String, Set<String>> getErrorHandlers() {
-		return errorHandlers;
-	}
-
-	public void setErrorHandlers(Map<String, Set<String>> errorHandlers) {
-		this.errorHandlers = errorHandlers;
 	}
 
 	public String getEsIndex() {

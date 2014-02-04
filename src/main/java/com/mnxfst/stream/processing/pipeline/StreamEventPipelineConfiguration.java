@@ -17,7 +17,11 @@ package com.mnxfst.stream.processing.pipeline;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+
+import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
@@ -48,7 +52,12 @@ public class StreamEventPipelineConfiguration implements Serializable {
 	
 	/** set of pipeline node configurations */
 	@JsonProperty ( value = "pipelineNodes", required = true )
-	private List<StreamEventProcessingNodeConfiguration> pipelineNodes = new ArrayList<>();	
+	private List<StreamEventProcessingNodeConfiguration> pipelineNodes = new ArrayList<>();
+	
+	/** identifiers of processing nodes that are capable of handling errors */
+	@JsonProperty ( value = "errorHandlingNodes", required = true )
+	private Set<String> errorHandlingNodes = new HashSet<>();
+	
 	
 	/**
 	 * Default constructor
@@ -74,6 +83,15 @@ public class StreamEventPipelineConfiguration implements Serializable {
 	 */
 	public void addPipelineNode(final StreamEventProcessingNodeConfiguration nodeConfiguration) {
 		this.pipelineNodes.add(nodeConfiguration);
+	}
+	
+	/**
+	 * Add error handler identifier
+	 * @param errorHandlingNodeId
+	 */
+	public void addErrorHandlingNode(final String errorHandlingNodeId) {
+		if(StringUtils.isNotBlank(errorHandlingNodeId))
+			this.errorHandlingNodes.add(errorHandlingNodeId);
 	}
 
 	public String getIdentifier() {
@@ -108,4 +126,13 @@ public class StreamEventPipelineConfiguration implements Serializable {
 			List<StreamEventProcessingNodeConfiguration> pipelineNodes) {
 		this.pipelineNodes = pipelineNodes;
 	}
+
+	public Set<String> getErrorHandlingNodes() {
+		return errorHandlingNodes;
+	}
+
+	public void setErrorHandlingNodes(Set<String> errorHandlingNodes) {
+		this.errorHandlingNodes = errorHandlingNodes;
+	}
+	
 }

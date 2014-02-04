@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.mnxfst.stream.model;
+package com.mnxfst.stream.processing.model;
 
 import java.io.Serializable;
 

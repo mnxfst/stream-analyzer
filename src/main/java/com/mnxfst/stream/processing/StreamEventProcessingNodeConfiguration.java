@@ -16,8 +16,6 @@
 package com.mnxfst.stream.processing;
 
 import java.io.Serializable;
-import java.util.Map;
-import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -47,12 +45,6 @@ public interface StreamEventProcessingNodeConfiguration extends Serializable {
 	public String getDescription();
 	/** sets the description */
 	public void setDescription(final String description);
-	/** returns the error handlers */
-	public Map<String, Set<String>> getErrorHandlers();
-	/** sets the error handlers */
-	public void setErrorHandlers(Map<String, Set<String>> errorHandlers);
-	/** Adds a new set of error handlers */
-	public void addErrorHandlers(final String errorKey, final Set<String> handlers);
 	/** returns the number of node instances made available through a round-robin router */
 	public int getNumOfNodeInstances();
 	/** sets the number of node instances to be made available through a round-robin router */

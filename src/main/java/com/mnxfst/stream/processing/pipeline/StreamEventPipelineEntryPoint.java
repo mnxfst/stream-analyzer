@@ -25,10 +25,10 @@ import akka.actor.Props;
 import akka.actor.UntypedActor;
 import akka.routing.RoundRobinRouter;
 
-import com.mnxfst.stream.message.PipelineNodeReferencesMessage;
-import com.mnxfst.stream.message.StreamEventMessage;
 import com.mnxfst.stream.processing.StreamEventProcessingNodeConfiguration;
 import com.mnxfst.stream.processing.evaluator.StreamEventScriptEvaluator;
+import com.mnxfst.stream.processing.message.PipelineNodeReferencesMessage;
+import com.mnxfst.stream.processing.message.StreamEventMessage;
 
 /**
  * Represents the entry point into a {@link StreamEventMessage stream event} processing pipeline. 
@@ -50,9 +50,7 @@ public class StreamEventPipelineEntryPoint extends UntypedActor {
 	private final String pipelineEntryPointId;
 	/** map of all elements contained inside stream event pipeline */
 	private final Map<String, ActorRef> pipelineNodeRefs = new HashMap<>();
-	
-	// TODO error handler!!!
-	
+		
 	/**
 	 * Initializes the pipeline using the provided input 
 	 * @param configuration
@@ -90,7 +88,7 @@ public class StreamEventPipelineEntryPoint extends UntypedActor {
 		
 		// prepare broadcast message notifying all pipeline elements about each other ... TODO a real akka broadcast would be much cooler 
 		PipelineNodeReferencesMessage nodeReferencesMessage = new PipelineNodeReferencesMessage(configuration.getIdentifier());
-		
+
 		// step through nodes and initialize each one separately		
 		for(final StreamEventProcessingNodeConfiguration nodeCfg : configuration.getPipelineNodes()) {
 
@@ -127,6 +125,16 @@ public class StreamEventPipelineEntryPoint extends UntypedActor {
 			throw new RuntimeException("Failed to initialize pipeline '"+configuration.getIdentifier()+"' as entry point is missing");
 		}
 		
+		// fill error handler set
+		for(String errorHandlerId : this.configuration.getErrorHandlingNodes()) {
+			if(StringUtils.isNotBlank(errorHandlerId)) {
+				final ActorRef errorHandlerRef = this.pipelineNodeRefs.get(errorHandlerId);
+				nodeReferencesMessage.addErrorHandlerReference(errorHandlerId, errorHandlerRef);
+			} else {
+				context().system().log().error("Failed to find error handler '"+errorHandlerId+"' in pipeline node set");
+			}
+		}
+		
 		// tell all sub-nodes about the others
 		for(String refId : this.pipelineNodeRefs.keySet()) {
 			final ActorRef nodeRef = this.pipelineNodeRefs.get(refId);			
@@ -146,7 +154,6 @@ public class StreamEventPipelineEntryPoint extends UntypedActor {
 		if(message instanceof StreamEventMessage) {			
 			final ActorRef entryPointRef = this.pipelineNodeRefs.get(pipelineEntryPointId);
 			entryPointRef.tell(message, getSelf());
-			System.out.println("Told " +pipelineEntryPointId + "/"+entryPointRef+" about it");
 		}		
 	}
 }

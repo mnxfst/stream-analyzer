@@ -5,7 +5,7 @@ import java.io.FileInputStream;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import com.mnxfst.stream.message.StreamEventMessage;
+import com.mnxfst.stream.processing.message.StreamEventMessage;
 
 public class ScriptingExample {
 

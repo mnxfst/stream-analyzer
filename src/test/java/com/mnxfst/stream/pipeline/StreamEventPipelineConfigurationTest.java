@@ -26,10 +26,9 @@ import akka.actor.ActorSystem;
 import akka.actor.Props;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mnxfst.stream.message.StreamEventMessage;
-import com.mnxfst.stream.processing.AbstractStreamEventProcessingNode;
 import com.mnxfst.stream.processing.evaluator.StreamEventScriptEvaluator;
 import com.mnxfst.stream.processing.evaluator.StreamEventScriptEvaluatorConfiguration;
+import com.mnxfst.stream.processing.message.StreamEventMessage;
 import com.mnxfst.stream.processing.persistence.StreamEventESWriter;
 import com.mnxfst.stream.processing.persistence.StreamEventESWriterConfiguration;
 import com.mnxfst.stream.processing.pipeline.StreamEventPipelineConfiguration;
@@ -47,21 +46,19 @@ public class StreamEventPipelineConfigurationTest {
 		
 		ActorSystem system = ActorSystem.create("junit");
 		
-		StreamEventScriptEvaluatorConfiguration evaluatorCfg = new StreamEventScriptEvaluatorConfiguration(StreamEventScriptEvaluator.class.getName(), "sv-1", "script-1", "var a = 1; var result = '2';", "JavaScript");
+		StreamEventScriptEvaluatorConfiguration evaluatorCfg = new StreamEventScriptEvaluatorConfiguration(
+				StreamEventScriptEvaluator.class.getName(), "sv-1", "script-1", -1, "var a = 1; var result = '2';", "JavaScript");
 		Set<String> res = new HashSet<>();
 		res.add("es-writer-1");
 		evaluatorCfg.addForwardingRule("2", res);
-		Set<String> errorHandlers = new HashSet<String>();
-		errorHandlers.add("test");
-		evaluatorCfg.addErrorHandlers(AbstractStreamEventProcessingNode.DEFAULT_ERROR_HANDLER, errorHandlers);
 		
-		StreamEventESWriterConfiguration esCfg = new StreamEventESWriterConfiguration(StreamEventESWriter.class.getName(), "es-writer-1", "test-description", "test", "junit");
+		StreamEventESWriterConfiguration esCfg = new StreamEventESWriterConfiguration(StreamEventESWriter.class.getName(), "es-writer-1", "test-description", -1, "test", "junit");
 		esCfg.addESClusterNode("localhost", 1);
-		esCfg.addErrorHandlers(AbstractStreamEventProcessingNode.DEFAULT_ERROR_HANDLER, errorHandlers);
 		
 		StreamEventPipelineConfiguration cfg = new StreamEventPipelineConfiguration("pipe-1", "test pipeline", "sv-1");
 		cfg.addPipelineNode(evaluatorCfg);
 		cfg.addPipelineNode(esCfg);
+		cfg.addErrorHandlingNode("es-writer-1");
 		
 		ActorRef pipeline = system.actorOf(Props.create(StreamEventPipelineEntryPoint.class, cfg), "pipeline");
 		

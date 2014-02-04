@@ -29,8 +29,8 @@ import akka.actor.UntypedActor;
 import akka.dispatch.OnComplete;
 import akka.util.Timeout;
 
-import com.mnxfst.stream.message.BindEventSourcePipelineFailedMessage;
-import com.mnxfst.stream.message.StreamEventMessage;
+import com.mnxfst.stream.processing.message.BindEventSourcePipelineFailedMessage;
+import com.mnxfst.stream.processing.message.StreamEventMessage;
 
 /**
  * Receives all inbound {@link StreamEventMessage events}, analyzes the contained 
@@ -68,26 +68,28 @@ public class StreamEventDispatcher extends UntypedActor {
 		
 		// message must not be null ... obviously
 		if(msg == null) {
-			// TODO error handling
+			// TODO do we need some reporting here?
 			return;
 		}
 		
 		// event source identifier must be available to properly identify pipeline  
 		if(StringUtils.isBlank(msg.getEventSourceId())) {
-			// TODO error handling 
+			// TODO do we need some reporting here
 			return;
 		}
 		
 		// event source identifier must point to a processing pipeline
 		if(!this.pipelines.containsKey(msg.getEventSourceId())) {
-			// TODO error handling
+			// TODO  any more logging required?
+			context().system().log().error("No pipeline found for event source identifier '"+msg.getEventSourceId()+"'. Ignoring message."); 
 			return;
 		}
 		
 		// fetch the pipeline entry points and ensure that the list holds some references
 		List<ActorRef> pipelineEntryPoints = this.pipelines.get(msg.getEventSourceId());
 		if(pipelineEntryPoints == null || pipelineEntryPoints.isEmpty()) {
-			// TODO error handling
+			// TODO any more logging required?
+			context().system().log().error("Pipelines found for event source identifier '"+msg.getEventSourceId()+"' but no entry points found. Ignoring message.");
 			return;
 		}
 	
@@ -97,6 +99,7 @@ public class StreamEventDispatcher extends UntypedActor {
 				entryPoint.tell(msg, getSelf());
 			}
 		}
+
 		context().system().log().debug("Forwarded inbound message from " + msg.getEventSourceId() + 
 				" to " + pipelineEntryPoints.size() + " pipelines");		
 	}
