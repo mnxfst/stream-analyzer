@@ -78,6 +78,14 @@
             <version>9.1.1.v20140108</version>
 		</dependency>
 		
+		<!-- netty.io -->
+		<dependency>
+			<groupId>io.netty</groupId>
+			<artifactId>netty-all</artifactId>
+			<version>4.0.15.Final</version>
+	</dependency>
+            
+            
   		<!-- akka and friends -->
 		<dependency>
 	  		<groupId>com.typesafe.akka</groupId>
