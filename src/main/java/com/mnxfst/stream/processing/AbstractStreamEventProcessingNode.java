@@ -16,15 +16,17 @@
 package com.mnxfst.stream.processing;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.mnxfst.stream.evaluator.StreamEventScriptEvaluator;
+import com.mnxfst.stream.message.PipelineNodeReferencesMessage;
 import com.mnxfst.stream.message.StreamEventMessage;
-import com.mnxfst.stream.persistence.StreamEventESWriter;
-import com.mnxfst.stream.pipeline.StreamEventPipelineEntryPoint;
+import com.mnxfst.stream.processing.evaluator.StreamEventScriptEvaluator;
+import com.mnxfst.stream.processing.persistence.StreamEventESWriter;
+import com.mnxfst.stream.processing.pipeline.StreamEventPipelineEntryPoint;
 
 import akka.actor.ActorRef;
 import akka.actor.UntypedActor;
@@ -65,13 +67,13 @@ public abstract class AbstractStreamEventProcessingNode extends UntypedActor {
 		this.identifier = configuration.getIdentifier();
 		this.errorHandlerConfig.putAll(configuration.getErrorHandlers());
 
+		continue with error handlers
 		// TODO lookup error handlers
 		
-		if(!this.errorHandlers.containsKey(DEFAULT_ERROR_HANDLER)) 
+		if(!this.errorHandlerConfig.containsKey(DEFAULT_ERROR_HANDLER)) 
 			throw new RuntimeException("Missing default error handler");
-
 	}
-
+	
 	/**
 	 * Reports an error to the configured {@link ActorRef error handler}
 	 * @param streamEventMessage
@@ -89,8 +91,30 @@ public abstract class AbstractStreamEventProcessingNode extends UntypedActor {
 		if(keySpecificErrorHandlers == null || keySpecificErrorHandlers.isEmpty())
 			keySpecificErrorHandlers = this.errorHandlers.get(DEFAULT_ERROR_HANDLER);
 		
-		// forward message
-		for(ActorRef ar : keySpecificErrorHandlers)
-			ar.tell(streamEventMessage, getSelf());
+		
+		if(keySpecificErrorHandlers != null) {
+			// forward message
+			for(ActorRef ar : keySpecificErrorHandlers)
+				ar.tell(streamEventMessage, getSelf());
+		} else {
+			context().system().log().error("Error handler configuration invalid. Failed to report: " + key + "/"+location+"/"+message);
+		}
 	}
+	
+	/**
+	 * Register {@link PipelineNodeReferencesMessage#getErrorHandlerReferences() error handlers} 
+	 * @param refMessage
+	 */
+	protected void registerErrorHandlers(final PipelineNodeReferencesMessage refMessage) {
+		
+		// inbound message must neither be null nor must its node references map be empty
+		if(refMessage == null)
+			return;
+		if(refMessage.getErrorHandlerReferences() == null || refMessage.getErrorHandlerReferences().isEmpty())
+			return; // TODO valid
+
+		
+	}
+	
+	// TODO error handler registration
 }

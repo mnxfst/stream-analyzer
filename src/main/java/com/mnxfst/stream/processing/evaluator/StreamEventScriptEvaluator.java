@@ -13,25 +13,22 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.mnxfst.stream.evaluator;
+package com.mnxfst.stream.processing.evaluator;
 
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
 import org.apache.commons.lang3.StringUtils;
-import org.eclipse.jetty.util.ConcurrentHashSet;
 
-import scala.concurrent.Future;
-import scala.concurrent.duration.FiniteDuration;
 import akka.actor.ActorRef;
-import akka.dispatch.OnComplete;
 
+import com.mnxfst.stream.message.PipelineNodeReferencesMessage;
 import com.mnxfst.stream.message.StreamEventMessage;
 import com.mnxfst.stream.processing.AbstractStreamEventProcessingNode;
 
@@ -41,6 +38,7 @@ import com.mnxfst.stream.processing.AbstractStreamEventProcessingNode;
  * message is forwarded to a number of configured components. 
  * @author mnxfst
  * @since 03.02.2014
+ * TODO testing
  */
 public class StreamEventScriptEvaluator extends AbstractStreamEventProcessingNode {
 
@@ -56,7 +54,7 @@ public class StreamEventScriptEvaluator extends AbstractStreamEventProcessingNod
 	/** scripting engine */
 	private ScriptEngine scriptEngine;
 	/** forwarding rules */
-	private final Map<String, ConcurrentHashSet<ActorRef>> forwardingRules = new ConcurrentHashMap<>();
+	private final Map<String, Set<ActorRef>> forwardingRules = new HashMap<>();
 	
 	/**
 	 * Initializes the evaluator using the provided input
@@ -82,58 +80,9 @@ public class StreamEventScriptEvaluator extends AbstractStreamEventProcessingNod
 		this.scriptEngine = scriptEngineManager.getEngineByName(configuration.getScriptEngineName());
 		if(this.scriptEngine == null)
 			throw new RuntimeException("Failed to initializes script engine '"+configuration.getScriptEngineName()+"'");
-
-		// initialize the map of forwarding rules by adding an empty destination list for each script result 
-		// to render map entry initialization later on unnecessary as it may lead to concurrency issues since 
-		// the entries added to the lists 
-		// TODO test this thoroughly!!!
-		if(configuration.getForwardingRules() != null && !configuration.getForwardingRules().isEmpty()) {
-			for(final String scriptResult : configuration.getForwardingRules().keySet()) {
-				this.forwardingRules.put(scriptResult, new ConcurrentHashSet<ActorRef>());
-			}
-
-			for(final String scriptResult : configuration.getForwardingRules().keySet()) {		
-				Set<String> forwards = configuration.getForwardingRules().get(scriptResult);				
-				if(forwards != null && !forwards.isEmpty()) {
-					for(final String fwdRefPath : forwards) {
-	
-						Future<ActorRef> fwdRef = context().system().actorSelection(fwdRefPath).resolveOne(FiniteDuration.apply(ACTOR_SELECTION_TIMEOUT, TimeUnit.SECONDS));
-						fwdRef.onComplete(new OnComplete<ActorRef>() {
-							
-							/**
-							 * @see akka.dispatch.OnComplete#onComplete(java.lang.Throwable, java.lang.Object)
-							 */
-							public void onComplete(Throwable error, ActorRef actorRef) throws Throwable {
-								
-								if(error == null) {
-									ConcurrentHashSet<ActorRef> forwards = forwardingRules.get(scriptResult);									
-									if(forwards == null)
-										forwards = new ConcurrentHashSet<ActorRef>();				
-									if(!forwards.contains(actorRef)) {
-										forwards.add(actorRef);
-										context().system().log().debug("Successfully registered " + actorRef + " as forward destination for " + scriptResult);
-									} else {				
-										context().system().log().debug("An identical forward destination already exists for " + scriptResult);
-									}
-								} else {
-									throw new RuntimeException("Failed to fetch the actor reference for " + fwdRefPath + ". Reason: " + error.getMessage(), error);
-								}
-							}
-									
-						}, context().dispatcher());
-
-					}					
-				}
-			}
-		}	
-
-		
 		
 	}
 		
-
-
-
 	/**
 	 * @see akka.actor.UntypedActor#onReceive(java.lang.Object)
 	 */
@@ -161,8 +110,9 @@ public class StreamEventScriptEvaluator extends AbstractStreamEventProcessingNod
 				reportError(msg,"stream.script.evaluator.forwarding.general", "forwardStreamEvent", e.getMessage());
 				return;
 			}
-
-		}		
+		} else if(message instanceof PipelineNodeReferencesMessage) {
+			registerForwards((PipelineNodeReferencesMessage)message);
+		}
 	}	
 	
 	/**
@@ -195,9 +145,9 @@ public class StreamEventScriptEvaluator extends AbstractStreamEventProcessingNod
 		}
 			
 		// fetch the receivers configured for the script response, otherwise forward the message to the error handler
-		ConcurrentHashSet<ActorRef> forwards = this.forwardingRules.get(scriptResponse);
+		Set<ActorRef> forwards = this.forwardingRules.get(scriptResponse);
 		if(forwards == null || forwards.isEmpty()) {
-			reportError(streamEventMessage, "stream.analyzer.script.forwarding.noRules", "forwardStreamEvent", "no forwarding rule found for response");
+			reportError(streamEventMessage, "stream.analyzer.script.forwarding.noRules", "forwardStreamEvent", "no forwarding rule found for response '"+scriptResponse+"'");
 			return;
 		}
 		
@@ -206,5 +156,44 @@ public class StreamEventScriptEvaluator extends AbstractStreamEventProcessingNod
 			if(ref != null)
 				ref.tell(streamEventMessage, getSender());
 		}
-	}		
+	}
+	
+	/**
+	 * Register {@link AbstractStreamEventProcessingNode forwards} according to the configuration by taking
+	 * their {@link ActorRef references} from the inbound {@link PipelineNodeReferencesMessage message}
+	 * @param refMessage
+	 */
+	protected void registerForwards(final PipelineNodeReferencesMessage refMessage) {
+		
+		// inbound message must neither be null nor must its node references map be empty
+		if(refMessage == null)
+			return;
+		if(refMessage.getNodeReferences() == null || refMessage.getNodeReferences().isEmpty())
+			return;
+		
+		// step through expected script results and fetch the configured forwards
+		for(String expectedScriptResult : this.configuration.getForwardingRules().keySet()) {
+			
+			Set<ActorRef> procNodeReferences = new HashSet<>();
+			
+			// read out all process node identifiers that are configured for the expected script result
+			Set<String> procNodeIdentifiers = this.configuration.getForwardingRules().get(expectedScriptResult);
+			if(procNodeIdentifiers == null || procNodeIdentifiers.isEmpty())
+				continue;
+			
+			// step through process node identifiers, check its correctness (non empty) and fetch the node reference from
+			// the inbound message
+			for(String procNodeRefId : procNodeIdentifiers) {
+				if(StringUtils.isNotBlank(procNodeRefId)) {
+					final ActorRef procNodeRef = refMessage.getNodeReferences().get(procNodeRefId);
+					if(procNodeRef != null) {
+						procNodeReferences.add(procNodeRef);
+					}
+				}
+			}
+			
+			this.forwardingRules.put(expectedScriptResult, procNodeReferences);
+		}		
+		System.out.println("Registered forwards: " + forwardingRules.size());
+	}
 }

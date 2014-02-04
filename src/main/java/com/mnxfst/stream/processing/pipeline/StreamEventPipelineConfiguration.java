@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.mnxfst.stream.pipeline;
+package com.mnxfst.stream.processing.pipeline;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -48,7 +48,7 @@ public class StreamEventPipelineConfiguration implements Serializable {
 	
 	/** set of pipeline node configurations */
 	@JsonProperty ( value = "pipelineNodes", required = true )
-	private List<StreamEventProcessingNodeConfiguration> pipelineNodes = new ArrayList<>();
+	private List<StreamEventProcessingNodeConfiguration> pipelineNodes = new ArrayList<>();	
 	
 	/**
 	 * Default constructor

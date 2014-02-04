@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.mnxfst.stream.persistence;
+package com.mnxfst.stream.processing.persistence;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -24,6 +24,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
+import com.mnxfst.stream.model.TransportAddress;
 import com.mnxfst.stream.processing.StreamEventProcessingNodeConfiguration;
 
 /**
@@ -45,9 +46,21 @@ public class StreamEventESWriterConfiguration implements StreamEventProcessingNo
 	/** description */
 	@JsonProperty ( value = "description", required = false )
 	private String description = null;
+	/** number of node instances - value of less than 1 avoids the instantiation of any router */
+	@JsonProperty ( value = "numOfNodeInstances", required = true )
+	private int numOfNodeInstances = 0; // value o
 	/** reference towards component receiving all error inbound messages */
 	@JsonProperty( value = "errorHandlers", required = true )
 	private Map<String, Set<String>> errorHandlers = new HashMap<>();
+	/** index to write inbound events to */
+	@JsonProperty ( value = "esIndex", required = true )
+	private String esIndex = null;
+	/** document type to use when writing to index */
+	@JsonProperty ( value = "documentType", required = true )
+	private String documentType = null;
+	/** elastic search cluster nodes */
+	@JsonProperty ( value = "esClusterNodes", required = true ) 
+	private Set<TransportAddress> esClusterNodes = new HashSet<>();
 
 	/**
 	 * Default constructor
@@ -57,14 +70,30 @@ public class StreamEventESWriterConfiguration implements StreamEventProcessingNo
 	
 	/**
 	 * Initializes the configuration using the provided input
+	 * @param processingNodeClass
 	 * @param identifier
 	 * @param description
 	 * @param entryPointId
+	 * @param esIndex
+	 * @param documentType
 	 */
-	public StreamEventESWriterConfiguration(final String processingNodeClass, final String identifier, final String description) {
+	public StreamEventESWriterConfiguration(final String processingNodeClass, final String identifier, final String description, final int numOfNodeInstances, final String esIndex, final String documentType) {
 		this.processingNodeClass = processingNodeClass;
 		this.identifier = identifier;
 		this.description = description;
+		this.esIndex = esIndex;
+		this.documentType = documentType;
+		this.numOfNodeInstances = numOfNodeInstances;
+	}
+	
+	/**
+	 * Adds a cluster node address to the configuration
+	 * @param host
+	 * @param port
+	 */
+	public void addESClusterNode(final String host, final Integer port) {
+		
+		this.esClusterNodes.add(new TransportAddress(host, port));
 	}
 
 	/**
@@ -112,6 +141,38 @@ public class StreamEventESWriterConfiguration implements StreamEventProcessingNo
 
 	public void setErrorHandlers(Map<String, Set<String>> errorHandlers) {
 		this.errorHandlers = errorHandlers;
+	}
+
+	public String getEsIndex() {
+		return esIndex;
+	}
+
+	public void setEsIndex(String esIndex) {
+		this.esIndex = esIndex;
+	}
+
+	public String getDocumentType() {
+		return documentType;
+	}
+
+	public void setDocumentType(String documentType) {
+		this.documentType = documentType;
+	}
+
+	public Set<TransportAddress> getEsClusterNodes() {
+		return esClusterNodes;
+	}
+
+	public void setEsClusterNodes(Set<TransportAddress> esClusterNodes) {
+		this.esClusterNodes = esClusterNodes;
+	}
+
+	public int getNumOfNodeInstances() {
+		return numOfNodeInstances;
+	}
+
+	public void setNumOfNodeInstances(int numOfNodeInstances) {
+		this.numOfNodeInstances = numOfNodeInstances;
 	}
 
 }

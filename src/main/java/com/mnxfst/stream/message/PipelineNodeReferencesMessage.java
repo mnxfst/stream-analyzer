@@ -23,7 +23,7 @@ import akka.actor.ActorRef;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
-import com.mnxfst.stream.pipeline.StreamEventPipelineEntryPoint;
+import com.mnxfst.stream.processing.pipeline.StreamEventPipelineEntryPoint;
 
 /**
  * Contain {@link ActorRef references} towards all nodes that belong to a pipeline. Each reference comes with
@@ -42,6 +42,9 @@ public class PipelineNodeReferencesMessage implements Serializable {
 	/** map of node references towards nodes (actors) */
 	@JsonProperty ( value = "nodeReferences", required = true )
 	private Map<String, ActorRef> nodeReferences = new HashMap<>();
+	/** map of node references which serve as error handlers (actors) */
+	@JsonProperty ( value = "errorHandlerReferences", required = true )
+	private Map<String, ActorRef> errorHandlerReferences = new HashMap<>();
 	
 	/**
 	 * Default constructor
@@ -52,11 +55,27 @@ public class PipelineNodeReferencesMessage implements Serializable {
 	/**
 	 * Initializes the message using the provided input
 	 * @param pipelineId
-	 * @param nodeReferences
 	 */
-	public PipelineNodeReferencesMessage(final String pipelineId, final Map<String, ActorRef> nodeReferences) {
+	public PipelineNodeReferencesMessage(final String pipelineId) {
 		this.pipelineId = pipelineId;
-		this.nodeReferences.putAll(nodeReferences);
+	}
+	
+	/**
+	 * Adds the node actor referenced by the identifier to the internal mapping 
+	 * @param nodeRefId
+	 * @param nodeActorReference
+	 */
+	public void addNodeReference(final String nodeRefId, final ActorRef nodeActorReference) {
+		this.nodeReferences.put(nodeRefId, nodeActorReference);
+	}
+	
+	/**
+	 * Adds the error handler referenced by the identifier to the internal mapping
+	 * @param errorHandlerRefId
+	 * @param errorHandlerReference
+	 */
+	public void addErrorHandlerReference(final String errorHandlerRefId, final ActorRef errorHandlerReference) {
+		this.errorHandlerReferences.put(errorHandlerRefId, errorHandlerReference);
 	}
 
 	public String getPipelineId() {
@@ -74,6 +93,14 @@ public class PipelineNodeReferencesMessage implements Serializable {
 	public void setNodeReferences(Map<String, ActorRef> nodeReferences) {
 		this.nodeReferences = nodeReferences;
 	}
-	
-	
+
+	public Map<String, ActorRef> getErrorHandlerReferences() {
+		return errorHandlerReferences;
+	}
+
+	public void setErrorHandlerReferences(
+			Map<String, ActorRef> errorHandlerReferences) {
+		this.errorHandlerReferences = errorHandlerReferences;
+	}
+		
 }

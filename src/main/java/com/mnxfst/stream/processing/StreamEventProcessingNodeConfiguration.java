@@ -22,8 +22,8 @@ import java.util.Set;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.mnxfst.stream.evaluator.StreamEventScriptEvaluatorConfiguration;
-import com.mnxfst.stream.persistence.StreamEventESWriterConfiguration;
+import com.mnxfst.stream.processing.evaluator.StreamEventScriptEvaluatorConfiguration;
+import com.mnxfst.stream.processing.persistence.StreamEventESWriterConfiguration;
 
 /**
  * Common interface to all settings used for setting up {@link AbstractStreamEventProcessingNode stream event processing nodes}
@@ -53,5 +53,9 @@ public interface StreamEventProcessingNodeConfiguration extends Serializable {
 	public void setErrorHandlers(Map<String, Set<String>> errorHandlers);
 	/** Adds a new set of error handlers */
 	public void addErrorHandlers(final String errorKey, final Set<String> handlers);
+	/** returns the number of node instances made available through a round-robin router */
+	public int getNumOfNodeInstances();
+	/** sets the number of node instances to be made available through a round-robin router */
+	public void setNumOfNodeInstances(final int numOfNodeInstances);
 
 }

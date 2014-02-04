@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.mnxfst.stream.evaluator;
+package com.mnxfst.stream.processing.evaluator;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -45,6 +45,9 @@ public class StreamEventScriptEvaluatorConfiguration implements StreamEventProce
 	/** description */
 	@JsonProperty ( value = "description", required = false )
 	private String description = null;
+	/** number of node instances - value of less than 1 avoids the instantiation of any router */
+	@JsonProperty ( value = "numOfNodeInstances", required = true )
+	private int numOfNodeInstances = 0; // value o
 	/** script to be applied on inbound stream event messages */
 	@JsonProperty ( value = "script", required = true )
 	private String script = null;	
@@ -72,12 +75,13 @@ public class StreamEventScriptEvaluatorConfiguration implements StreamEventProce
 	 * @param script
 	 * @param scriptEngineName
 	 */
-	public StreamEventScriptEvaluatorConfiguration(final String processingNodeClass, final String identifier, final String description, final String script, final String scriptEngineName) {
+	public StreamEventScriptEvaluatorConfiguration(final String processingNodeClass, final String identifier, final String description, final int numOfNodeInstances, final String script, final String scriptEngineName) {
 		this.processingNodeClass = processingNodeClass;
 		this.identifier = identifier;
 		this.description = description;
 		this.script = script;
 		this.scriptEngineName = scriptEngineName;
+		this.numOfNodeInstances = numOfNodeInstances;
 	}
 	
 	/**
@@ -164,6 +168,14 @@ public class StreamEventScriptEvaluatorConfiguration implements StreamEventProce
 
 	public void setDescription(String description) {
 		this.description = description;
+	}
+
+	public int getNumOfNodeInstances() {
+		return numOfNodeInstances;
+	}
+
+	public void setNumOfNodeInstances(int numOfNodeInstances) {
+		this.numOfNodeInstances = numOfNodeInstances;
 	}
 
 

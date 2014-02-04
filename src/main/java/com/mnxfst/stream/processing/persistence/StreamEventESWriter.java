@@ -13,18 +13,14 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.mnxfst.stream.persistence;
+package com.mnxfst.stream.processing.persistence;
 
-import java.util.Set;
-
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 
-import akka.actor.UntypedActor;
-
 import com.mnxfst.stream.message.StreamEventMessage;
+import com.mnxfst.stream.model.TransportAddress;
+import com.mnxfst.stream.processing.AbstractStreamEventProcessingNode;
 
 /**
  * Writes the {@link StreamEventMessage#getContent() content} of a {@link StreamEventMessage stream event} to a configured
@@ -33,45 +29,55 @@ import com.mnxfst.stream.message.StreamEventMessage;
  * @author mnxfst
  * @since 31.01.2014
  */
-public class StreamEventESWriter extends UntypedActor {
+public class StreamEventESWriter extends AbstractStreamEventProcessingNode {
 
+	/** es writer configuration */
+	private final StreamEventESWriterConfiguration configuration;
+	
 	/** client used for transporting content to elasticsearch server/cluster */
-	private final TransportClient esClient;
-	/** index to use as destination for inbound events */
-	private final String index;
-	/** message type to use for storing inbound events */
-	private final String type;
+	private TransportClient esClient;
 	
 	/**
-	 * Initializes the stream event writer using the provided input 
-	 * @param elasticSearchHosts
-	 * @param index 
-	 * @param type
+	 * Initializes the stream event writer using the provided input
+	 * @param configuration 
 	 */
-	public StreamEventESWriter(Set<Pair<String, Integer>> elasticSearchHosts, final String index, final String type) {
-
-		// create a new elasticsearch client and add transports according to provided host configurations
-		this.esClient = new TransportClient();
-		this.index = index;
-		this.type = type;
-		for(Pair<String, Integer> hostConfig : elasticSearchHosts) {
-			if(hostConfig != null && StringUtils.isNotBlank(hostConfig.getLeft()) && hostConfig.getRight() != null && hostConfig.getRight().intValue() > 0) 
-				this.esClient.addTransportAddress(new InetSocketTransportAddress(hostConfig.getLeft(), hostConfig.getRight()));
-		}
-			
+	public StreamEventESWriter(final StreamEventESWriterConfiguration configuration) {
+		super(configuration);
+		this.configuration = configuration;
 	}
-	
+		
+	/**
+	 * @see akka.actor.UntypedActor#preStart()
+	 */
+	public void preStart() throws Exception {
+		super.preStart();
+		
+		if(configuration.getEsClusterNodes() == null || configuration.getEsClusterNodes().isEmpty())
+			throw new RuntimeException("No elasticsearch cluster node configurations found");
+		
+		// create a new elasticsearch client and add transports according to provided host configurations
+//		this.esClient = new TransportClient();
+//		
+//		for(TransportAddress hostConfig : configuration.getEsClusterNodes()) {
+//			if(hostConfig != null) 
+//				this.esClient.addTransportAddress(new InetSocketTransportAddress(hostConfig.getHost(), hostConfig.getPort()));
+//		}
+		
+	}
+
+
+
 	/**
 	 * @see akka.actor.UntypedActor#onReceive(java.lang.Object)
 	 */
 	public void onReceive(Object message) throws Exception {
-
-		if(message instanceof StreamEventMessage) {
+			if(message instanceof StreamEventMessage) {
 			StreamEventMessage msg = (StreamEventMessage)message;
-			if(StringUtils.isNotBlank(msg.getContent()))
-				this.esClient.prepareIndex(index, type).setSource(msg.getContent()).execute().actionGet();
-//			else 
-				// TODO error handling
+//			if(StringUtils.isNotBlank(msg.getContent()))
+//				this.esClient.prepareIndex(index, type).setSource(msg.getContent()).execute().actionGet();
+////			else 
+//				// TODO error handling
+			System.out.println(msg.getContent());
 		} else {
 			unhandled(message);
 		}
