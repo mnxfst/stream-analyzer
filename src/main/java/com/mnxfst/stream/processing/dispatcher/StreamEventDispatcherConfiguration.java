@@ -55,7 +55,9 @@ public class StreamEventDispatcherConfiguration implements Serializable {
 	public StreamEventDispatcherConfiguration() {		
 	}
 	
-//	public StreamEventDispatcherConfiguration(final String dispatcherId, final String description, final St
+	public StreamEventDispatcherConfiguration(final String dispatcherId, final String description) {
+		
+	}
 	
 	
 }
