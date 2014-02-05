@@ -44,7 +44,6 @@ public class StreamEventDispatcherConfiguration implements Serializable {
 	@JsonProperty ( value = "description", required = true )
 	private String description = null;
 	/** mapping from pipeline identifiers towards the initial node references */
-	@JsonProperty ( value = "pipelines", required = true )
 	private final Map<String, ActorRef> pipelines = new HashMap<>();
 	/** mapping of event source towards a set pipelines that receive inbound messages of that source */
 	@JsonProperty ( value = "eventSourcePipelines", required = true )

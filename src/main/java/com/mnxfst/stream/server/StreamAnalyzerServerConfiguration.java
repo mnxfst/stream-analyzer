@@ -16,9 +16,13 @@
 package com.mnxfst.stream.server;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
+import com.mnxfst.stream.processing.dispatcher.StreamEventDispatcherConfiguration;
+import com.mnxfst.stream.processing.pipeline.StreamEventPipelineConfiguration;
 
 /**
  * Holds configuration for {@link StreamAnalyzerServer}
@@ -33,6 +37,122 @@ public class StreamAnalyzerServerConfiguration implements Serializable {
 	/** port to reach the server */
 	@JsonProperty ( value = "port", required = true )
 	private int port = 9090;
+	/** pipeline configurations */
+	@JsonProperty ( value = "pipelines", required = true )
+	private List<StreamEventPipelineConfiguration> pipelines = new ArrayList<>();
+	/** dispatcher configurations */
+	@JsonProperty ( value = "dispatcher", required = true )
+	private StreamEventDispatcherConfiguration dispatcher = null;
 	
+	// TODO refactor this to isolated config options
+	/** web socket reader configuration */
+	@JsonProperty ( value = "clientId", required = true )
+	private String clientId = null;
+	@JsonProperty ( value = "clientSecret", required = true )
+	private String clientSecret = null;
+	@JsonProperty ( value = "streamType", required = true )
+	private String streamType = null;
+	@JsonProperty ( value = "streamVersion", required = true )
+	private String streamVersion = null;
+	@JsonProperty ( value = "streamSchemaVersion", required = true )
+	private String streamSchemaVersion = null;
+	@JsonProperty ( value = "streamQuery", required = true )
+	private String streamQuery = null;
+	
+	/**
+	 * Default constructor
+	 */
+	public StreamAnalyzerServerConfiguration() {		
+	}
+	
+	/**
+	 * Initializes the instance using the provided input
+	 * @param port
+	 * @param dispatcher
+	 */
+	public StreamAnalyzerServerConfiguration(final int port, final StreamEventDispatcherConfiguration dispatcher) {
+		this.port = port;
+		this.dispatcher = dispatcher;
+	}
+	
+	/**
+	 * Adds a new {@link StreamEventPipelineConfiguration pipeline configuration}
+	 * @param cfg
+	 */
+	public void addStreamEventPipelineConfiguration(final StreamEventPipelineConfiguration cfg) {
+		this.pipelines.add(cfg);
+	}
+
+	public int getPort() {
+		return port;
+	}
+
+	public void setPort(int port) {
+		this.port = port;
+	}
+
+	public List<StreamEventPipelineConfiguration> getPipelines() {
+		return pipelines;
+	}
+
+	public void setPipelines(List<StreamEventPipelineConfiguration> pipelines) {
+		this.pipelines = pipelines;
+	}
+
+	public StreamEventDispatcherConfiguration getDispatcher() {
+		return dispatcher;
+	}
+
+	public void setDispatcher(StreamEventDispatcherConfiguration dispatcher) {
+		this.dispatcher = dispatcher;
+	}
+
+	public String getClientId() {
+		return clientId;
+	}
+
+	public void setClientId(String clientId) {
+		this.clientId = clientId;
+	}
+
+	public String getClientSecret() {
+		return clientSecret;
+	}
+
+	public void setClientSecret(String clientSecret) {
+		this.clientSecret = clientSecret;
+	}
+
+	public String getStreamType() {
+		return streamType;
+	}
+
+	public void setStreamType(String streamType) {
+		this.streamType = streamType;
+	}
+
+	public String getStreamVersion() {
+		return streamVersion;
+	}
+
+	public void setStreamVersion(String streamVersion) {
+		this.streamVersion = streamVersion;
+	}
+
+	public String getStreamSchemaVersion() {
+		return streamSchemaVersion;
+	}
+
+	public void setStreamSchemaVersion(String streamSchemaVersion) {
+		this.streamSchemaVersion = streamSchemaVersion;
+	}
+
+	public String getStreamQuery() {
+		return streamQuery;
+	}
+
+	public void setStreamQuery(String streamQuery) {
+		this.streamQuery = streamQuery;
+	}	
 	
 }
