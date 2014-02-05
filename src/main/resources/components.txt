@@ -1,4 +1,5 @@
 todo:
+
 	* include component configuration into pipeline configuration as it allows
 	  inline setup for each component whereas a simple reference to outside of 
 	  a pipeline configuration requires a thorough handling of references towards
