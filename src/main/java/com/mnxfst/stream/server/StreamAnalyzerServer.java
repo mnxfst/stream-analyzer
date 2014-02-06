@@ -23,6 +23,9 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 
 import java.io.File;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -31,14 +34,16 @@ import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.PosixParser;
+import org.apache.commons.collections.map.HashedMap;
 
+import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mnxfst.stream.listener.webtrends.WebTrendsStreamAPIListener;
 import com.mnxfst.stream.processing.dispatcher.StreamEventDispatcher;
 import com.mnxfst.stream.processing.dispatcher.StreamEventDispatcherConfiguration;
-import com.mnxfst.stream.webtrends.WebTrendsStreamAPIReader;
 
 /**
  * Main class starting things up
@@ -52,7 +57,7 @@ public class StreamAnalyzerServer {
 	/** executor service required for running the web socket reader*/
 	private ExecutorService executorService = null;
 	/** web socket reader */
-	private WebTrendsStreamAPIReader streamAPIReader = null;
+	private WebTrendsStreamAPIListener streamAPIReader = null;
 		
 	/**
 	 * Initializes and ramps up the stream analyzer server component
@@ -77,7 +82,7 @@ public class StreamAnalyzerServer {
 		actorSystem.actorOf(Props.create(StreamEventDispatcher));
 		
 		this.executorService = Executors.newFixedThreadPool(1);
-		this.streamAPIReader = new WebTrendsStreamAPIReader(cfg.getClientId(), cfg.getClientSecret(), 
+		this.streamAPIReader = new WebTrendsStreamAPIListener(cfg.getClientId(), cfg.getClientSecret(), 
 				cfg.getStreamType(), cfg.getStreamVersion(), cfg.getStreamSchemaVersion(), cfg.getStreamQuery(), dispatcherRef);
 		this.executorService.execute(streamAPIReader);
 		
@@ -98,6 +103,20 @@ public class StreamAnalyzerServer {
 	    	bossGroup.shutdownGracefully();
 	        workerGroup.shutdownGracefully();
 		}
+	}
+	
+	/**
+	 * Initializes the {@link StreamEventDispatcher dispatchers} according to the provided configurations. It returns a
+	 * map holding the {@link StreamEventDispatcherConfiguration#getIdentifier() dispatcher identifier} associated with
+	 * the {@link ActorRef dispatcher instance}.
+	 * @param dispatcherConfigurations
+	 * @return
+	 */
+	protected Map<String, ActorRef> initializeDispatchers(final List<StreamEventDispatcherConfiguration> dispatcherConfigurations) {
+		
+		Map<String, ActorRef> dispatchers = new HashMap<>();
+		return dispatchers;
+		
 	}
 	
 	protected static Options getOptions() {

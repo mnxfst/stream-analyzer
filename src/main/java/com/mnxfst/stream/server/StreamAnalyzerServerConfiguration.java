@@ -41,8 +41,8 @@ public class StreamAnalyzerServerConfiguration implements Serializable {
 	@JsonProperty ( value = "pipelines", required = true )
 	private List<StreamEventPipelineConfiguration> pipelines = new ArrayList<>();
 	/** dispatcher configurations */
-	@JsonProperty ( value = "dispatcher", required = true )
-	private StreamEventDispatcherConfiguration dispatcher = null;
+	@JsonProperty ( value = "dispatchers", required = true )
+	private List<StreamEventDispatcherConfiguration> dispatchers = new ArrayList<>();
 	
 	// TODO refactor this to isolated config options
 	/** web socket reader configuration */
@@ -68,11 +68,9 @@ public class StreamAnalyzerServerConfiguration implements Serializable {
 	/**
 	 * Initializes the instance using the provided input
 	 * @param port
-	 * @param dispatcher
 	 */
-	public StreamAnalyzerServerConfiguration(final int port, final StreamEventDispatcherConfiguration dispatcher) {
+	public StreamAnalyzerServerConfiguration(final int port) {
 		this.port = port;
-		this.dispatcher = dispatcher;
 	}
 	
 	/**
@@ -81,6 +79,14 @@ public class StreamAnalyzerServerConfiguration implements Serializable {
 	 */
 	public void addStreamEventPipelineConfiguration(final StreamEventPipelineConfiguration cfg) {
 		this.pipelines.add(cfg);
+	}
+	
+	/**
+	 * Adds a new {@link StreamEventDispatcherConfiguration dispatcher configuration}
+	 * @param streamEventDispatcherConfiguration
+	 */
+	public void addStreamEventDispatcherConfiguration(final StreamEventDispatcherConfiguration streamEventDispatcherConfiguration) {
+		this.dispatchers.add(streamEventDispatcherConfiguration);
 	}
 
 	public int getPort() {
@@ -99,12 +105,12 @@ public class StreamAnalyzerServerConfiguration implements Serializable {
 		this.pipelines = pipelines;
 	}
 
-	public StreamEventDispatcherConfiguration getDispatcher() {
-		return dispatcher;
+	public List<StreamEventDispatcherConfiguration> getDispatchers() {
+		return dispatchers;
 	}
 
-	public void setDispatcher(StreamEventDispatcherConfiguration dispatcher) {
-		this.dispatcher = dispatcher;
+	public void setDispatchers(List<StreamEventDispatcherConfiguration> dispatchers) {
+		this.dispatchers = dispatchers;
 	}
 
 	public String getClientId() {

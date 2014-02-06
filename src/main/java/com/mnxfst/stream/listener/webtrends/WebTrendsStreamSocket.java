@@ -3,7 +3,7 @@
  * OTTO GROUP PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 
-package com.mnxfst.stream.webtrends;
+package com.mnxfst.stream.listener.webtrends;
 
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
