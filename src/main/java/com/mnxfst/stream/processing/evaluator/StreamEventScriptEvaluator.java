@@ -48,6 +48,8 @@ public class StreamEventScriptEvaluator extends AbstractStreamEventProcessingNod
 	public static final String SCRIPT_EVENT_CONTENT = "eventContent";	
 	/** script engine variable that must hold the result indicator at the end of computation - aka the value which determine the forward to use */
 	public static final String SCRIPT_RESULT = "result";
+	/** special forward rule that tells the forwarder to ignore the message as it is considered irrelevant - avoid traffic if it would be send to a dead letter box simply to ignore it */
+	public static final String FORWARD_IGNORE_MESSAGE = "ignoreMessage";
 
 	/** evaluator configuration */
 	private final StreamEventScriptEvaluatorConfiguration configuration;
@@ -55,6 +57,8 @@ public class StreamEventScriptEvaluator extends AbstractStreamEventProcessingNod
 	private ScriptEngine scriptEngine;
 	/** forwarding rules */
 	private final Map<String, Set<ActorRef>> forwardingRules = new HashMap<>();
+	/** event counter */
+	private long eventCount = 0;
 	
 	/**
 	 * Initializes the evaluator using the provided input
@@ -89,6 +93,8 @@ public class StreamEventScriptEvaluator extends AbstractStreamEventProcessingNod
 	protected void processEvent(Object message) throws Exception {
 		
 		if(message instanceof StreamEventMessage) {
+			
+			eventCount++;
 			StreamEventMessage msg = (StreamEventMessage)message;
 			
 			// analyze message with configured script
@@ -110,6 +116,9 @@ public class StreamEventScriptEvaluator extends AbstractStreamEventProcessingNod
 				reportError(msg,"stream.script.evaluator.forwarding.general", "forwardStreamEvent", e.getMessage());
 				return;
 			}
+			
+			if(eventCount % 100 == 0)
+				System.out.println(eventCount + " events processed");
 		} else if(message instanceof PipelineNodeReferencesMessage) {
 			registerForwards((PipelineNodeReferencesMessage)message);
 		}
@@ -141,18 +150,21 @@ public class StreamEventScriptEvaluator extends AbstractStreamEventProcessingNod
 			reportError(streamEventMessage, "stream.analyzer.script.forwarding.noResponse", "forwardStreamEvent", "no response found");
 			return;
 		}
-			
-		// fetch the receivers configured for the script response, otherwise forward the message to the error handler
-		Set<ActorRef> forwards = this.forwardingRules.get(scriptResponse);
-		if(forwards == null || forwards.isEmpty()) {
-			reportError(streamEventMessage, "stream.analyzer.script.forwarding.noRules", "forwardStreamEvent", "no forwarding rule found for response '"+scriptResponse+"'");
-			return;
-		}
 		
-		// forward event to configured receivers
-		for(final ActorRef ref : forwards) {
-			if(ref != null)
-				ref.tell(streamEventMessage, getSender());
+		if(!StringUtils.equalsIgnoreCase(FORWARD_IGNORE_MESSAGE, scriptResponse)) {
+			
+			// fetch the receivers configured for the script response, otherwise forward the message to the error handler
+			Set<ActorRef> forwards = this.forwardingRules.get(scriptResponse);
+			if(forwards == null || forwards.isEmpty()) {
+				reportError(streamEventMessage, "stream.analyzer.script.forwarding.noRules", "forwardStreamEvent", "no forwarding rule found for response '"+scriptResponse+"'");
+				return;
+			}
+			
+			// forward event to configured receivers
+			for(final ActorRef ref : forwards) {
+				if(ref != null)
+					ref.tell(streamEventMessage, getSender());
+			}
 		}
 	}
 	

@@ -41,6 +41,7 @@ public class WebTrendsStreamSocket {
 	
 	private final ActorRef dispatcherRef;
 	private final CountDownLatch latch = new CountDownLatch(1);
+	private long eventCounter = 0;
 
 	/**
 	 * Initializes the socket using the provided input
@@ -84,8 +85,7 @@ public class WebTrendsStreamSocket {
 
 	    try {
 	    	session.getRemote().sendString(sb.toString());
-	    	
-	    	logger.info("web socket connected");
+	    	logger.info("WebTrends Streams API reader connected");
 	    } catch(IOException e) {
 	    	throw new RuntimeException("Unable to open stream", e);
 	    }
@@ -99,7 +99,12 @@ public class WebTrendsStreamSocket {
 	 */
 	@OnWebSocketMessage
 	public void onMessage(String message) {
-		this.dispatcherRef.tell(new StreamEventMessage(EVENT_SOURCE_ID, EVENT_SOURCE_ID, System.currentTimeMillis(), message), null);  
+		eventCounter++;
+		if(eventCounter == 100)
+			System.out.println(message);
+		this.dispatcherRef.tell(new StreamEventMessage(EVENT_SOURCE_ID, EVENT_SOURCE_ID, System.currentTimeMillis(), message), null);
+		if(eventCounter % 100 == 0)
+			System.out.println(eventCounter + " events received");
 	}
 
 	/**

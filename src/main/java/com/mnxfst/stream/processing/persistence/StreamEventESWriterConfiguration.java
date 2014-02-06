@@ -15,8 +15,12 @@
  */
 package com.mnxfst.stream.processing.persistence;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
+
+import org.codehaus.jackson.map.ObjectMapper;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
@@ -54,7 +58,10 @@ public class StreamEventESWriterConfiguration implements StreamEventProcessingNo
 	/** elastic search cluster nodes */
 	@JsonProperty ( value = "esClusterNodes", required = true ) 
 	private Set<TransportAddress> esClusterNodes = new HashSet<>();
-
+	/** additional settings */
+	@JsonProperty ( value = "clientSettings", required = true )
+	private Map<String, String> clientSettings = new HashMap<>();
+	
 	/**
 	 * Default constructor
 	 */
@@ -87,6 +94,15 @@ public class StreamEventESWriterConfiguration implements StreamEventProcessingNo
 	public void addESClusterNode(final String host, final Integer port) {
 		
 		this.esClusterNodes.add(new TransportAddress(host, port));
+	}
+	
+	/**
+	 * Adds a new client setting
+	 * @param key
+	 * @param value
+	 */
+	public void addClientSetting(final String key, final String value) {
+		this.clientSettings.put(key, value);
 	}
 
 	public String getProcessingNodeClass() {
@@ -145,4 +161,19 @@ public class StreamEventESWriterConfiguration implements StreamEventProcessingNo
 		this.numOfNodeInstances = numOfNodeInstances;
 	}
 
+	public Map<String, String> getClientSettings() {
+		return clientSettings;
+	}
+
+	public void setClientSettings(Map<String, String> clientSettings) {
+		this.clientSettings = clientSettings;
+	}
+
+	public static void main(String[] args) throws Exception {
+		StreamEventESWriterConfiguration cfg = new StreamEventESWriterConfiguration();
+		cfg.addESClusterNode("localhost",  9300);
+		cfg.addClientSetting("cluster.name", "tracker");
+		System.out.println((new ObjectMapper()).writeValueAsString(cfg));
+	}
+	
 }

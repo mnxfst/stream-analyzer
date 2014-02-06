@@ -15,11 +15,13 @@
  */
 package com.mnxfst.stream.processing.persistence;
 
+import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 
 import com.mnxfst.stream.processing.AbstractStreamEventProcessingNode;
-import com.mnxfst.stream.processing.message.PipelineNodeReferencesMessage;
 import com.mnxfst.stream.processing.message.StreamEventMessage;
 import com.mnxfst.stream.processing.model.TransportAddress;
 
@@ -56,8 +58,19 @@ public class StreamEventESWriter extends AbstractStreamEventProcessingNode {
 		if(configuration.getEsClusterNodes() == null || configuration.getEsClusterNodes().isEmpty())
 			throw new RuntimeException("No elasticsearch cluster node configurations found");
 		
+		ImmutableSettings.Builder settingsBuilder = ImmutableSettings.settingsBuilder();
+		if(configuration.getClientSettings() != null && !configuration.getClientSettings().isEmpty()) {
+			for(String key : configuration.getClientSettings().keySet()) {
+				if(StringUtils.isNotBlank(key)) {
+					settingsBuilder.put(key, configuration.getClientSettings().get(key));
+				}
+			}
+		}
+		
+		Settings settings = settingsBuilder.build();
+
 		// create a new elasticsearch client and add transports according to provided host configurations
-		this.esClient = new TransportClient();
+		this.esClient = new TransportClient(settings);
 		
 		for(TransportAddress hostConfig : configuration.getEsClusterNodes()) {
 			if(hostConfig != null) 

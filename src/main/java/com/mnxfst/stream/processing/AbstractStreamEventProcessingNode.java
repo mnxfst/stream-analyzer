@@ -97,8 +97,10 @@ public abstract class AbstractStreamEventProcessingNode extends UntypedActor {
 
 		// lookup error handler(s)
 		ActorRef keySpecificErrorHandler = this.errorHandlers.get(key);
-		if(keySpecificErrorHandler == null)
-			keySpecificErrorHandler = this.errorHandlers.get(DEFAULT_ERROR_HANDLER);
+		
+		// TODO should there be handlers per error type or should all error handlers receive the messages and decide upon theirselves if it is relevant to handle?
+//		if(keySpecificErrorHandler == null)
+//			keySpecificErrorHandler = this.errorHandlers.get(DEFAULT_ERROR_HANDLER);
 		
 		if(keySpecificErrorHandler != null) {
 			keySpecificErrorHandler.tell(streamEventMessage, getSelf());
@@ -124,9 +126,11 @@ public abstract class AbstractStreamEventProcessingNode extends UntypedActor {
 			this.errorHandlers.put(errorKey, refMessage.getErrorHandlerReferences().get(errorKey));
 		}
 
-		// ensure that the error handlers contain at least the default handler
-		if(!this.errorHandlers.containsKey(DEFAULT_ERROR_HANDLER)) 
-			throw new RuntimeException("Missing default error handler");
+		// TODO should there be handlers per error type or should all error handlers receive the messages and decide upon theirselves if it is relevant to handle?
+
+//		// ensure that the error handlers contain at least the default handler
+//		if(!this.errorHandlers.containsKey(DEFAULT_ERROR_HANDLER)) 
+//			throw new RuntimeException("Missing default error handler");
 	}
 	
 }

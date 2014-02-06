@@ -124,7 +124,7 @@ public class StreamEventPipelineEntryPoint extends UntypedActor {
 		if(!this.pipelineNodeRefs.containsKey(pipelineEntryPointId)) {
 			throw new RuntimeException("Failed to initialize pipeline '"+configuration.getIdentifier()+"' as entry point is missing");
 		}
-		
+				
 		// fill error handler set
 		for(String errorHandlerId : this.configuration.getErrorHandlingNodes()) {
 			if(StringUtils.isNotBlank(errorHandlerId)) {

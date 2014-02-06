@@ -46,13 +46,9 @@ import akka.actor.Props;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mnxfst.stream.listener.AbstractStreamEventListener;
 import com.mnxfst.stream.listener.StreamEventListenerConfiguration;
-import com.mnxfst.stream.listener.webtrends.WebTrendsStreamAPIListener;
 import com.mnxfst.stream.listener.webtrends.WebTrendsStreamListenerConfiguration;
-import com.mnxfst.stream.listener.webtrends.WebTrendsStreamSocket;
 import com.mnxfst.stream.processing.dispatcher.StreamEventDispatcher;
 import com.mnxfst.stream.processing.dispatcher.StreamEventDispatcherConfiguration;
-import com.mnxfst.stream.processing.evaluator.StreamEventScriptEvaluator;
-import com.mnxfst.stream.processing.evaluator.StreamEventScriptEvaluatorConfiguration;
 import com.mnxfst.stream.processing.pipeline.StreamEventPipelineConfiguration;
 import com.mnxfst.stream.processing.pipeline.StreamEventPipelineEntryPoint;
 
@@ -123,7 +119,7 @@ public class StreamAnalyzerServer {
 		this.dispatchers = initializeDispatchers(configuration.getDispatchers(), pipelines);
 		this.listeners = initializeListeners(configuration.getListeners(), dispatchers);
 
-		actorSystem.log().info("[listeners"+this.listeners.size()+", dispatchers="+this.dispatchers.size()+", pipelines="+this.pipelines+"]");
+		actorSystem.log().info("[listeners="+this.listeners.size()+", dispatchers="+this.dispatchers.size()+", pipelines="+this.pipelines+"]");
 		
 	}
 	
