@@ -15,6 +15,7 @@
  */
 package com.mnxfst.stream.processing.evaluator;
 
+import java.io.FileInputStream;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -51,6 +52,10 @@ public class StreamEventScriptEvaluator extends AbstractStreamEventProcessingNod
 	/** special forward rule that tells the forwarder to ignore the message as it is considered irrelevant - avoid traffic if it would be send to a dead letter box simply to ignore it */
 	public static final String FORWARD_IGNORE_MESSAGE = "ignoreMessage";
 
+	/** spahql script */
+	private final String spaqhlScript;
+	/** reference towards script */
+	private final String script;
 	/** evaluator configuration */
 	private final StreamEventScriptEvaluatorConfiguration configuration;
 	/** scripting engine */
@@ -72,6 +77,29 @@ public class StreamEventScriptEvaluator extends AbstractStreamEventProcessingNod
 			throw new RuntimeException("Missing required script");
 		if(StringUtils.isBlank(configuration.getScriptEngineName()))
 			throw new RuntimeException("Missing required script engine name");
+		
+		try {
+			FileInputStream fin = new FileInputStream(configuration.getScript());
+			int c = 0;
+			StringBuffer buf = new StringBuffer();
+			while((c = fin.read()) != -1) {
+				buf.append((char)c);
+			}
+			fin.close();
+			this.script = buf.toString();
+			fin = new FileInputStream("/home/mnxfst/git/stream-analyzer/src/main/resources/spahql.js");
+			c = 0;
+			StringBuffer spahqlScript = new StringBuffer();
+			while((c = fin.read()) != -1) {
+				spahqlScript.append((char)c);
+			}
+			fin.close();
+			this.spaqhlScript = spahqlScript.toString();
+		} catch(Exception e) {
+			throw new RuntimeException("Failed to read script from " + configuration.getScript() + ". Error: " + e.getMessage());
+		}
+		
+		
 	}
 	
 	/**
@@ -84,7 +112,8 @@ public class StreamEventScriptEvaluator extends AbstractStreamEventProcessingNod
 		this.scriptEngine = scriptEngineManager.getEngineByName(configuration.getScriptEngineName());
 		if(this.scriptEngine == null)
 			throw new RuntimeException("Failed to initializes script engine '"+configuration.getScriptEngineName()+"'");
-		
+		this.scriptEngine.eval(this.spaqhlScript);
+
 	}
 
 	/**
@@ -132,7 +161,8 @@ public class StreamEventScriptEvaluator extends AbstractStreamEventProcessingNod
 	 */
 	protected String evaluateScript(final StreamEventMessage streamEventMessage) throws ScriptException {
 		this.scriptEngine.put(SCRIPT_EVENT_CONTENT, streamEventMessage.getContent());
-		this.scriptEngine.eval(this.configuration.getScript());
+//		this.scriptEngine.eval(this.configuration.getScript());
+		this.scriptEngine.eval(this.script);
 		String messageContent = (String)this.scriptEngine.get(SCRIPT_EVENT_CONTENT);
 		streamEventMessage.setContent(messageContent);
 		return (String)this.scriptEngine.get(SCRIPT_RESULT);
