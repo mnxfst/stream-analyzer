@@ -23,6 +23,7 @@ import java.util.Set;
 
 import akka.actor.ActorRef;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.mnxfst.stream.processing.message.StreamEventMessage;
@@ -44,6 +45,7 @@ public class StreamEventDispatcherConfiguration implements Serializable {
 	@JsonProperty ( value = "description", required = true )
 	private String description = null;
 	/** mapping from pipeline identifiers towards the initial node references */
+	@JsonIgnore
 	private final Map<String, ActorRef> pipelines = new HashMap<>();
 	/** mapping of event source towards a set pipelines that receive inbound messages of that source */
 	@JsonProperty ( value = "eventSourcePipelines", required = true )

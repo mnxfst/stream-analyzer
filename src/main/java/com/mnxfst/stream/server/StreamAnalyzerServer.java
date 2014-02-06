@@ -46,8 +46,13 @@ import akka.actor.Props;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mnxfst.stream.listener.AbstractStreamEventListener;
 import com.mnxfst.stream.listener.StreamEventListenerConfiguration;
+import com.mnxfst.stream.listener.webtrends.WebTrendsStreamAPIListener;
+import com.mnxfst.stream.listener.webtrends.WebTrendsStreamListenerConfiguration;
+import com.mnxfst.stream.listener.webtrends.WebTrendsStreamSocket;
 import com.mnxfst.stream.processing.dispatcher.StreamEventDispatcher;
 import com.mnxfst.stream.processing.dispatcher.StreamEventDispatcherConfiguration;
+import com.mnxfst.stream.processing.evaluator.StreamEventScriptEvaluator;
+import com.mnxfst.stream.processing.evaluator.StreamEventScriptEvaluatorConfiguration;
 import com.mnxfst.stream.processing.pipeline.StreamEventPipelineConfiguration;
 import com.mnxfst.stream.processing.pipeline.StreamEventPipelineEntryPoint;
 
@@ -151,7 +156,7 @@ public class StreamAnalyzerServer {
 			try {
 				final ActorRef dispatcherRef = dispatchers.get(cfg.getDispatcherIdentifier());
 				Class<?> dispatcherClass = Class.forName(cfg.getListenerClassName());
-				Constructor<?> constructor = dispatcherClass.getConstructor(StreamEventListenerConfiguration.class, ActorRef.class);
+				Constructor<?> constructor = dispatcherClass.getConstructor(WebTrendsStreamListenerConfiguration.class, ActorRef.class);
 				final AbstractStreamEventListener listener = (AbstractStreamEventListener)constructor.newInstance(cfg, dispatcherRef);
 				listeners.put(cfg.getIdentifier(), listener);
 			} catch(Exception e) {
@@ -260,7 +265,7 @@ public class StreamAnalyzerServer {
 		options.addOption("f", true, "Configuration file");
 		return options;
 	}
-	
+
 	public static void main(String[] args) throws Exception {
 		
 		CommandLineParser parser = new PosixParser();
@@ -284,4 +289,27 @@ public class StreamAnalyzerServer {
 		server.initialize(cfg);
 		server.run(cfg);		
 	}
+
+	/*
+	public static void main(String[] args) throws Exception {
+			StreamAnalyzerServerConfiguration cfg = new StreamAnalyzerServerConfiguration(9090);
+		WebTrendsStreamListenerConfiguration wtCfg = new WebTrendsStreamListenerConfiguration("wt-id", "disp-1", WebTrendsStreamAPIListener.class.getName(), 
+				"clientId", "clientSecret", "return_all", "select *", "2.0", "2.2");
+		cfg.addStreamEventListenerConfiguration(wtCfg);
+		
+		StreamEventScriptEvaluatorConfiguration scriptEvalConfig = new StreamEventScriptEvaluatorConfiguration(StreamEventScriptEvaluator.class.getName(), "script-1", "script evaluator", 2, "var result = 'true'", "JavaScript");
+				
+		StreamEventPipelineConfiguration pipelineCfg = new StreamEventPipelineConfiguration("pipe1","pipeline-1-description", "eval-1");
+		pipelineCfg.addErrorHandlingNode("script-1");
+		pipelineCfg.addPipelineNode(scriptEvalConfig);
+		cfg.addStreamEventPipelineConfiguration(pipelineCfg);
+		
+		StreamEventDispatcherConfiguration dispatcherCfg = new StreamEventDispatcherConfiguration("disp-1", "dispatcher-1");
+		dispatcherCfg.addEventSourcePipeline(WebTrendsStreamSocket.EVENT_SOURCE_ID, "pipe1");
+		cfg.addStreamEventDispatcherConfiguration(dispatcherCfg);
+		
+		ObjectMapper mapper = new ObjectMapper();
+		System.out.println(mapper.writeValueAsString(cfg));
+		}
+		*/
 }

@@ -10,8 +10,7 @@ import java.io.Serializable;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.mnxfst.stream.processing.evaluator.StreamEventScriptEvaluatorConfiguration;
-import com.mnxfst.stream.processing.persistence.StreamEventESWriterConfiguration;
+import com.mnxfst.stream.listener.webtrends.WebTrendsStreamListenerConfiguration;
 
 /**
  * Common interface for listener configuration
@@ -21,7 +20,7 @@ import com.mnxfst.stream.processing.persistence.StreamEventESWriterConfiguration
  */
 @JsonRootName ( value = "listenerConfiguration" )
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
-@JsonSubTypes ({ @JsonSubTypes.Type(StreamEventScriptEvaluatorConfiguration.class), @JsonSubTypes.Type( StreamEventESWriterConfiguration.class) })
+@JsonSubTypes ({ @JsonSubTypes.Type(WebTrendsStreamListenerConfiguration.class) })
 public interface StreamEventListenerConfiguration extends Serializable {
 
 	/** Sets the listener id */

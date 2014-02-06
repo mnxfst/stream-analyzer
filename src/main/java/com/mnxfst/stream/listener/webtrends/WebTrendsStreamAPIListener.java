@@ -87,7 +87,7 @@ public class WebTrendsStreamAPIListener extends AbstractStreamEventListener {
 		isRunning = true;
 		
 		while(isRunning) {
-			//
+			// 
 		}
 		
 		try {

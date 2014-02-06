@@ -15,7 +15,7 @@ import com.mnxfst.stream.listener.StreamEventListenerConfiguration;
  * @since 06.02.2014
  *
  */
-@JsonRootName ( value = "webtrendsStreamListenerConfiguration" )
+@JsonRootName ( value = "webTrendsListenerConfiguration" )
 public class WebTrendsStreamListenerConfiguration implements
 		StreamEventListenerConfiguration {
 
