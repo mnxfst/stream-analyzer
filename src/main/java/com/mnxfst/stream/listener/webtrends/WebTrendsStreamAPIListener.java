@@ -14,7 +14,7 @@ import org.eclipse.jetty.websocket.client.WebSocketClient;
 
 import akka.actor.ActorRef;
 
-import com.mnxfst.stream.listener.AbstractStreamAnalyzerListener;
+import com.mnxfst.stream.listener.AbstractStreamEventListener;
 
 /**
  * Implements a reader for fetching contents from {@linkplain http://streams.webtrends.com}
@@ -22,7 +22,7 @@ import com.mnxfst.stream.listener.AbstractStreamAnalyzerListener;
  * @since 05.02.2014
  *
  */
-public class WebTrendsStreamAPIListener extends AbstractStreamAnalyzerListener {
+public class WebTrendsStreamAPIListener extends AbstractStreamEventListener {
 
 	private final WebTrendsStreamListenerConfiguration configuration;
 	private final ActorRef dispatcherRef;
@@ -38,8 +38,7 @@ public class WebTrendsStreamAPIListener extends AbstractStreamAnalyzerListener {
 	 */
 	public WebTrendsStreamAPIListener(final WebTrendsStreamListenerConfiguration configuration, final ActorRef dispatcherRef) {
 
-		super((configuration != null ? configuration.getIdentifier() : null), (configuration != null ? configuration.getDispatcherIdentifier() : null),
-				dispatcherRef);
+		super(configuration, dispatcherRef);
 
 		if(configuration == null)
 			throw new RuntimeException("Missing required listener configuraton");
@@ -98,7 +97,10 @@ public class WebTrendsStreamAPIListener extends AbstractStreamAnalyzerListener {
 		}
 	}
 	
-	public void stop() {
+	/**
+	 * @see com.mnxfst.stream.listener.AbstractStreamEventListener#shutdown()
+	 */
+	public void shutdown() {
 		this.isRunning = false;
 	}
 

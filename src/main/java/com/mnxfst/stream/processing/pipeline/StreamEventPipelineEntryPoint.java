@@ -140,9 +140,8 @@ public class StreamEventPipelineEntryPoint extends UntypedActor {
 			final ActorRef nodeRef = this.pipelineNodeRefs.get(refId);			
 			nodeRef.tell(nodeReferencesMessage, getSelf());
 		}
-			
-		System.out.println(pipelineNodeRefs.size() + " nodes notified");
 		
+		context().system().log().info("[pipeline="+configuration.getIdentifier()+", entryPoint="+configuration.getEntryPointId()+", nodes="+pipelineNodeRefs.size()+"]");
 	}
 	
 	/**

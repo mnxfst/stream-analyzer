@@ -23,9 +23,13 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 
 import java.io.File;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -34,16 +38,18 @@ import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.PosixParser;
-import org.apache.commons.collections.map.HashedMap;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mnxfst.stream.listener.webtrends.WebTrendsStreamAPIListener;
+import com.mnxfst.stream.listener.AbstractStreamEventListener;
+import com.mnxfst.stream.listener.StreamEventListenerConfiguration;
 import com.mnxfst.stream.processing.dispatcher.StreamEventDispatcher;
 import com.mnxfst.stream.processing.dispatcher.StreamEventDispatcherConfiguration;
+import com.mnxfst.stream.processing.pipeline.StreamEventPipelineConfiguration;
+import com.mnxfst.stream.processing.pipeline.StreamEventPipelineEntryPoint;
 
 /**
  * Main class starting things up
@@ -56,37 +62,20 @@ public class StreamAnalyzerServer {
 	private final ActorSystem actorSystem = ActorSystem.create("streamAnalyzer"); 
 	/** executor service required for running the web socket reader*/
 	private ExecutorService executorService = null;
-	/** web socket reader */
-	private WebTrendsStreamAPIListener streamAPIReader = null;
+	/** pipelines receiving traffic from dispatchers */
+	private Map<String, ActorRef> pipelines;
+	/** dispatchers receiving inbound traffic from listeners */
+	private Map<String, ActorRef> dispatchers;
+	/** listeners receiving traffic from external source */
+	private Map<String, AbstractStreamEventListener> listeners;
 		
 	/**
 	 * Initializes and ramps up the stream analyzer server component
-	 * @param configurationFile
+	 * @param cfg
 	 * @throws Exception
 	 */
-	protected void run(final String configurationFile) throws Exception {
-		
-		// handler to gracefully shutdown the actor system 
-		Runtime.getRuntime().addShutdownHook(new Thread() {
-		    public void run() {		        
-		        actorSystem.shutdown();
-		    }
-		});
-		
-		// fetch the configuration from file
-		ObjectMapper configFileMapper = new ObjectMapper();
-		StreamAnalyzerServerConfiguration cfg = configFileMapper.readValue(new File(configurationFile), StreamAnalyzerServerConfiguration.class);
-		if(cfg == null)
-			throw new RuntimeException("Failed to read configuration from " + configurationFile);
-		
-		actorSystem.actorOf(Props.create(StreamEventDispatcher));
-		
-		this.executorService = Executors.newFixedThreadPool(1);
-		this.streamAPIReader = new WebTrendsStreamAPIListener(cfg.getClientId(), cfg.getClientSecret(), 
-				cfg.getStreamType(), cfg.getStreamVersion(), cfg.getStreamSchemaVersion(), cfg.getStreamQuery(), dispatcherRef);
-		this.executorService.execute(streamAPIReader);
-		
-		
+	protected void run(final StreamAnalyzerServerConfiguration cfg) throws Exception {
+				
 		// initialize server and ramp it up
 		EventLoopGroup bossGroup = new NioEventLoopGroup();
 		EventLoopGroup workerGroup = new NioEventLoopGroup();
@@ -105,18 +94,165 @@ public class StreamAnalyzerServer {
 		}
 	}
 	
+	protected void initialize(final StreamAnalyzerServerConfiguration configuration) {
+
+		// handler to gracefully shutdown the actor system 
+		Runtime.getRuntime().addShutdownHook(new Thread() {
+		    public void run() {
+		    	
+		    	for(final String listenerId : listeners.keySet()) {
+		    		AbstractStreamEventListener listener = listeners.get(listenerId);
+		    		if(listener != null)
+		    			listener.shutdown();
+		    		actorSystem.log().info("[listener="+listenerId+", state=shutdown]");
+		    	}		    	
+		        actorSystem.shutdown();
+		    }
+		});
+
+		// init pipelines
+		// init dispatchers
+		// init listeners
+		
+		this.pipelines = initializePipelines(configuration.getPipelines());
+		this.dispatchers = initializeDispatchers(configuration.getDispatchers(), pipelines);
+		this.listeners = initializeListeners(configuration.getListeners(), dispatchers);
+
+		actorSystem.log().info("[listeners"+this.listeners.size()+", dispatchers="+this.dispatchers.size()+", pipelines="+this.pipelines+"]");
+		
+	}
+	
+	/**
+	 * Initializes the {@link AbstractStreamEventListener stream event listeners}, ramps them up and assigns
+	 * them to the {@link ExecutorService executor} taking care of it
+	 * @param listenerConfigurations
+	 * @param dispatchers
+	 * @return
+	 * @throws ClassNotFoundException 
+	 * @throws SecurityException 
+	 * @throws NoSuchMethodException 
+	 * @throws InvocationTargetException 
+	 * @throws IllegalArgumentException 
+	 * @throws IllegalAccessException 
+	 * @throws InstantiationException 
+	 */
+	protected Map<String, AbstractStreamEventListener> initializeListeners(final List<StreamEventListenerConfiguration> listenerConfigurations,
+			Map<String, ActorRef> dispatchers) {
+		
+		if(listenerConfigurations == null || listenerConfigurations.isEmpty())
+			throw new RuntimeException("Missing required listener configuration");
+		
+		Map<String, AbstractStreamEventListener> listeners = new HashMap<>();
+		
+		for(final StreamEventListenerConfiguration cfg : listenerConfigurations) {
+			if(cfg == null)
+				continue;
+			
+			try {
+				final ActorRef dispatcherRef = dispatchers.get(cfg.getDispatcherIdentifier());
+				Class<?> dispatcherClass = Class.forName(cfg.getListenerClassName());
+				Constructor<?> constructor = dispatcherClass.getConstructor(StreamEventListenerConfiguration.class, ActorRef.class);
+				final AbstractStreamEventListener listener = (AbstractStreamEventListener)constructor.newInstance(cfg, dispatcherRef);
+				listeners.put(cfg.getIdentifier(), listener);
+			} catch(Exception e) {
+				throw new RuntimeException("Failed to initialize listener '"+cfg.getIdentifier()+"'. Error: " + e.getMessage(), e);
+			}
+		}
+		
+		if(listeners.isEmpty())
+			throw new RuntimeException("No valid listener configurations found");
+		
+		this.executorService = Executors.newFixedThreadPool(listeners.size());
+		for(final String listenerId : listeners.keySet()) {
+			this.executorService.execute(listeners.get(listenerId));
+			actorSystem.log().info("[listener="+listenerId+", state=started]");
+		}
+		
+		return listeners;		
+	}
+	
 	/**
 	 * Initializes the {@link StreamEventDispatcher dispatchers} according to the provided configurations. It returns a
 	 * map holding the {@link StreamEventDispatcherConfiguration#getIdentifier() dispatcher identifier} associated with
 	 * the {@link ActorRef dispatcher instance}.
 	 * @param dispatcherConfigurations
+	 * @param pipelines
 	 * @return
 	 */
-	protected Map<String, ActorRef> initializeDispatchers(final List<StreamEventDispatcherConfiguration> dispatcherConfigurations) {
+	protected Map<String, ActorRef> initializeDispatchers(final List<StreamEventDispatcherConfiguration> dispatcherConfigurations, 
+			final Map<String, ActorRef> pipelines) {
 		
-		Map<String, ActorRef> dispatchers = new HashMap<>();
+		// check input for any configs 
+		if(dispatcherConfigurations == null || dispatcherConfigurations.isEmpty())
+			throw new RuntimeException("Missing required dispatcher configuration");
+
+		Map<String, ActorRef> dispatchers = new HashMap<>();		
+		// step through configurations
+		for(final StreamEventDispatcherConfiguration cfg : dispatcherConfigurations) {
+			if(cfg == null)
+				continue;
+			
+			// fetch all pipelines from event source configurations
+			Set<String> allEventSourcePipelines = new HashSet<>();
+			for(String eventSouceId : cfg.getEventSourcePipelines().keySet()) {
+				Set<String> cfgEventSourcePipelines = cfg.getEventSourcePipelines().get(eventSouceId);
+				if(cfgEventSourcePipelines != null && !cfgEventSourcePipelines.isEmpty())
+					allEventSourcePipelines.addAll(cfgEventSourcePipelines);
+				else
+					throw new RuntimeException("Missing pipeline configuration for event source '" + eventSouceId + "'");
+			}
+			
+			// step through all pipelines and retrieve references towards their entry points
+			for(String pipelineId : allEventSourcePipelines) {
+				if(pipelines.containsKey(pipelineId))
+					cfg.addPipeline(pipelineId, pipelines.get(pipelineId));
+				else
+					throw new RuntimeException("Missing pipeline instance for '"+pipelineId+"'");
+			}
+				
+			final ActorRef dispatcherRef = actorSystem.actorOf(Props.create(StreamEventDispatcher.class, cfg), cfg.getIdentifier());
+			if(dispatcherRef == null)
+				throw new RuntimeException("Failed to initialize dispatcher '"+cfg.getIdentifier()+"'");
+			dispatchers.put(cfg.getIdentifier(), dispatcherRef);
+		}
+		
+		if(dispatchers.isEmpty())
+			throw new RuntimeException("No valid dispatcher configuration found");
+		
 		return dispatchers;
 		
+	}
+	
+	/**
+	 * Initialize processing pipelines and return map holding mapping from 
+	 * {@link StreamEventPipelineConfiguration#getIdentifier() pipeline identifier} towards
+	 * the {@link StreamEventPipelineEntryPoint entry point}  
+	 * @param pipelineConfigurations
+	 * @return
+	 */
+	protected Map<String, ActorRef> initializePipelines(final List<StreamEventPipelineConfiguration> pipelineConfigurations) {
+		
+		if(pipelineConfigurations == null || pipelineConfigurations.isEmpty())
+			throw new RuntimeException("Missing required pipeline configurations");
+		
+		// step through configurations and initialize pipelines
+		Map<String, ActorRef> pipelineEntryPoints = new HashMap<>();
+		for(final StreamEventPipelineConfiguration cfg : pipelineConfigurations) {
+			if(cfg == null)
+				continue;
+			
+			// initialize pipeline entry point
+			final ActorRef pipelineEntryPointRef = actorSystem.actorOf(Props.create(StreamEventPipelineEntryPoint.class, cfg), cfg.getIdentifier());
+			if(pipelineEntryPointRef != null)
+				pipelineEntryPoints.put(cfg.getIdentifier(), pipelineEntryPointRef);
+		}
+		
+		if(pipelineConfigurations.isEmpty())
+			throw new RuntimeException("No valid pipeline configuration found");
+		
+		actorSystem.log().info("[pipelines="+pipelineConfigurations.size()+"]");
+		
+		return pipelineEntryPoints;		
 	}
 	
 	protected static Options getOptions() {
@@ -135,7 +271,17 @@ public class StreamAnalyzerServer {
 			formatter.printHelp("java " + StreamAnalyzerServer.class.getName(), getOptions());
 			return;
 		}
+
+		String configurationFile = cmdLine.getOptionValue("f");
 		
-		(new StreamAnalyzerServer()).run(cmdLine.getOptionValue("f"));
+		// fetch the configuration from file
+		ObjectMapper configFileMapper = new ObjectMapper();
+		StreamAnalyzerServerConfiguration cfg = configFileMapper.readValue(new File(configurationFile), StreamAnalyzerServerConfiguration.class);
+		if(cfg == null)
+			throw new RuntimeException("Failed to read configuration from " + configurationFile);
+		
+		StreamAnalyzerServer server = new StreamAnalyzerServer();
+		server.initialize(cfg);
+		server.run(cfg);		
 	}
 }

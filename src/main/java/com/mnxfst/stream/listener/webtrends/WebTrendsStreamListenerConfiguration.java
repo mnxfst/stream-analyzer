@@ -7,7 +7,7 @@ package com.mnxfst.stream.listener.webtrends;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
-import com.mnxfst.stream.listener.StreamAnalyzerListenerConfiguration;
+import com.mnxfst.stream.listener.StreamEventListenerConfiguration;
 
 /**
  * 
@@ -17,7 +17,7 @@ import com.mnxfst.stream.listener.StreamAnalyzerListenerConfiguration;
  */
 @JsonRootName ( value = "webtrendsStreamListenerConfiguration" )
 public class WebTrendsStreamListenerConfiguration implements
-		StreamAnalyzerListenerConfiguration {
+		StreamEventListenerConfiguration {
 
 	private static final long serialVersionUID = 7518374251142479068L;
 

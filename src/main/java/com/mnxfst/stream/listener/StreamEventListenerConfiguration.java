@@ -22,7 +22,7 @@ import com.mnxfst.stream.processing.persistence.StreamEventESWriterConfiguration
 @JsonRootName ( value = "listenerConfiguration" )
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 @JsonSubTypes ({ @JsonSubTypes.Type(StreamEventScriptEvaluatorConfiguration.class), @JsonSubTypes.Type( StreamEventESWriterConfiguration.class) })
-public interface StreamAnalyzerListenerConfiguration extends Serializable {
+public interface StreamEventListenerConfiguration extends Serializable {
 
 	/** Sets the listener id */
 	public void setIdentifier(String identifier);
