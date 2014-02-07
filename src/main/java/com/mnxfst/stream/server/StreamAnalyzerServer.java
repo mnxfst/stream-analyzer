@@ -38,6 +38,7 @@ import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.PosixParser;
+import org.apache.log4j.Logger;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
@@ -58,6 +59,8 @@ import com.mnxfst.stream.processing.pipeline.StreamEventPipelineEntryPoint;
  * @since 05.02.2014
  */
 public class StreamAnalyzerServer {
+	
+	private static final Logger logger = Logger.getLogger(StreamAnalyzerServer.class);
 	
 	/** central actor system */
 	private final ActorSystem actorSystem = ActorSystem.create("streamAnalyzer"); 
@@ -116,8 +119,11 @@ public class StreamAnalyzerServer {
 		// init listeners
 		
 		this.pipelines = initializePipelines(configuration.getPipelines());
+		logger.info(this.pipelines.size() + " pipelines initalized");
 		this.dispatchers = initializeDispatchers(configuration.getDispatchers(), pipelines);
+		logger.info(this.dispatchers.size() + " dispatchers initialized");
 		this.listeners = initializeListeners(configuration.getListeners(), dispatchers);
+		logger.info(this.listeners.size() + " listeners initialized");
 
 		actorSystem.log().info("[listeners="+this.listeners.size()+", dispatchers="+this.dispatchers.size()+", pipelines="+this.pipelines+"]");
 		
@@ -261,7 +267,6 @@ public class StreamAnalyzerServer {
 		options.addOption("f", true, "Configuration file");
 		return options;
 	}
-
 	public static void main(String[] args) throws Exception {
 		
 		CommandLineParser parser = new PosixParser();
@@ -285,15 +290,18 @@ public class StreamAnalyzerServer {
 		server.initialize(cfg);
 		server.run(cfg);		
 	}
-
 	/*
+
 	public static void main(String[] args) throws Exception {
 			StreamAnalyzerServerConfiguration cfg = new StreamAnalyzerServerConfiguration(9090);
 		WebTrendsStreamListenerConfiguration wtCfg = new WebTrendsStreamListenerConfiguration("wt-id", "disp-1", WebTrendsStreamAPIListener.class.getName(), 
 				"clientId", "clientSecret", "return_all", "select *", "2.0", "2.2");
 		cfg.addStreamEventListenerConfiguration(wtCfg);
 		
+		Set<String> forwards = new HashSet<>();
+		forwards.add("es-writer-1");
 		StreamEventScriptEvaluatorConfiguration scriptEvalConfig = new StreamEventScriptEvaluatorConfiguration(StreamEventScriptEvaluator.class.getName(), "script-1", "script evaluator", 2, "var result = 'true'", "JavaScript");
+		scriptEvalConfig.addForwardingRule("errorsFound", forwards);
 				
 		StreamEventPipelineConfiguration pipelineCfg = new StreamEventPipelineConfiguration("pipe1","pipeline-1-description", "eval-1");
 		pipelineCfg.addErrorHandlingNode("script-1");

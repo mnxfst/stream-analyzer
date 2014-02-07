@@ -146,8 +146,6 @@ public class StreamEventScriptEvaluator extends AbstractStreamEventProcessingNod
 				return;
 			}
 			
-			if(eventCount % 100 == 0)
-				System.out.println(eventCount + " events processed");
 		} else if(message instanceof PipelineNodeReferencesMessage) {
 			registerForwards((PipelineNodeReferencesMessage)message);
 		}

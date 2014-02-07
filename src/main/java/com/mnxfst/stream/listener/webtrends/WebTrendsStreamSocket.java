@@ -100,11 +100,11 @@ public class WebTrendsStreamSocket {
 	@OnWebSocketMessage
 	public void onMessage(String message) {
 		eventCounter++;
-		if(eventCounter == 100)
-			System.out.println(message);
+//		if(eventCounter == 100)
+//			System.out.println(message);
 		this.dispatcherRef.tell(new StreamEventMessage(EVENT_SOURCE_ID, EVENT_SOURCE_ID, System.currentTimeMillis(), message), null);
-		if(eventCounter % 100 == 0)
-			System.out.println(eventCounter + " events received");
+//		if(eventCounter % 100 == 0)
+//			System.out.println(eventCounter + " events received");
 	}
 
 	/**

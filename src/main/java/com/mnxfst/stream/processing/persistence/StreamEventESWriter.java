@@ -86,11 +86,11 @@ public class StreamEventESWriter extends AbstractStreamEventProcessingNode {
 
 		if(message instanceof StreamEventMessage) {
 			StreamEventMessage msg = (StreamEventMessage)message;
-//			if(StringUtils.isNotBlank(msg.getContent()))
-//				this.esClient.prepareIndex(index, type).setSource(msg.getContent()).execute().actionGet();
-////			else 
+			if(StringUtils.isNotBlank(msg.getContent()))
+				this.esClient.prepareIndex(configuration.getEsIndex(), configuration.getDocumentType()).setSource(msg.getContent()).execute().actionGet();
+///			else 
 //				// TODO error handling
-			System.out.println(msg.getContent());
+//			System.out.println(msg.getContent());
 		} else {
 			unhandled(message);
 		}
