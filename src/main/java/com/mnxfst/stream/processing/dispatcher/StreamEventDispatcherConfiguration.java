@@ -26,6 +26,9 @@ import akka.actor.ActorRef;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.mnxfst.stream.processing.dispatcher.script.ScriptBasedStreamEventDispatcherConfiguration;
 import com.mnxfst.stream.processing.message.StreamEventMessage;
 
 /**
@@ -34,7 +37,9 @@ import com.mnxfst.stream.processing.message.StreamEventMessage;
  * @since Feb 4, 2014
  */
 @JsonRootName ( value = "dispatcherConfiguration" )
-public class StreamEventDispatcherConfiguration implements Serializable {
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
+@JsonSubTypes ({ @JsonSubTypes.Type(ScriptBasedStreamEventDispatcherConfiguration.class) })
+public abstract class StreamEventDispatcherConfiguration implements Serializable {
 
 	private static final long serialVersionUID = -8557324052827634194L;
 
@@ -47,9 +52,12 @@ public class StreamEventDispatcherConfiguration implements Serializable {
 	/** mapping from pipeline identifiers towards the initial node references */
 	@JsonIgnore
 	private final Map<String, ActorRef> pipelines = new HashMap<>();
-	/** mapping of event source towards a set pipelines that receive inbound messages of that source */
-	@JsonProperty ( value = "eventSourcePipelines", required = true )
-	private final Map<String, Set<String>> eventSourcePipelines = new HashMap<>();
+	/** mapping of destination identifiers towards a set pipelines that receive inbound messages of that destination */
+	@JsonProperty ( value = "destinationPipelines", required = true )
+	private Map<String, Set<String>> destinationPipelines = new HashMap<>();
+	/** name of dispatcher implementation */
+	@JsonProperty ( value = "dispatcherClass", required = true )
+	private String dispatcherClass = null;
 	
 	/**
 	 * Default constructor
@@ -61,10 +69,12 @@ public class StreamEventDispatcherConfiguration implements Serializable {
 	 * Initializes the configuration using the provided input
 	 * @param identifier
 	 * @param description
+	 * @param dispatcherClass
 	 */
-	public StreamEventDispatcherConfiguration(final String identifier, final String description) {
+	public StreamEventDispatcherConfiguration(final String identifier, final String description, final String dispatcherClass) {
 		this.identifier = identifier;
 		this.description = description;
+		this.dispatcherClass = dispatcherClass;
 	}
 
 	/**
@@ -77,74 +87,72 @@ public class StreamEventDispatcherConfiguration implements Serializable {
 	}
 	
 	/**
-	 * Adds the referenced pipeline as receiver of {@link StreamEventMessage stream events} that 
-	 * originate from the named event source 
-	 * @param eventSourceId
+	 * Adds the referenced pipeline as receiver of {@link StreamEventMessage stream events} 
+	 * @param destinationId
 	 * @param pipelineId
 	 */
-	public void addEventSourcePipeline(final String eventSourceId, final String pipelineId) {		
-		Set<String> pipelineIdentifiers = this.eventSourcePipelines.get(eventSourceId);
+	public void addDestinationPipeline(final String destinationId, final String pipelineId) {		
+		Set<String> pipelineIdentifiers = this.destinationPipelines.get(destinationId);
 		if(pipelineIdentifiers == null)
 			pipelineIdentifiers = new HashSet<>();
 		pipelineIdentifiers.add(pipelineId);
-		this.eventSourcePipelines.put(eventSourceId, pipelineIdentifiers);		
+		this.destinationPipelines.put(destinationId, pipelineIdentifiers);		
 	}
 	
 	/**
-	 * Adds the referenced pipelines as receivers of {@link StreamEventMessage stream events} that
-	 * originate from the name event source
-	 * @param eventSourceId
+	 * Adds the referenced pipelines as receivers of {@link StreamEventMessage stream events} 
+	 * @param destinationId
 	 * @param pipelineRefs
 	 */
-	public void addEventSourcePipeline(final String eventSourceId, final Set<String> pipelineIds) {
-		Set<String> pipeIds = this.eventSourcePipelines.get(eventSourceId);
+	public void addDestinationPipeline(final String destinationId, final Set<String> pipelineIds) {
+		Set<String> pipeIds = this.destinationPipelines.get(destinationId);
 		if(pipeIds == null)
 			pipeIds = new HashSet<>();
 			pipeIds.addAll(pipelineIds);
-		this.eventSourcePipelines.put(eventSourceId, pipeIds);		
+		this.destinationPipelines.put(destinationId, pipeIds);		
 	}
 
-	/**
-	 * @return the identifier
-	 */
 	public String getIdentifier() {
 		return identifier;
 	}
 
-	/**
-	 * @param identifier the identifier to set
-	 */
 	public void setIdentifier(String identifier) {
 		this.identifier = identifier;
 	}
 
 	/**
-	 * @return the description
+	 * @return the dispatcherClass
 	 */
+	public String getDispatcherClass() {
+		return dispatcherClass;
+	}
+
+	/**
+	 * @param dispatcherClass the dispatcherClass to set
+	 */
+	public void setDispatcherClass(String dispatcherClass) {
+		this.dispatcherClass = dispatcherClass;
+	}
+
 	public String getDescription() {
 		return description;
 	}
 
-	/**
-	 * @param description the description to set
-	 */
 	public void setDescription(String description) {
 		this.description = description;
 	}
 
-	/**
-	 * @return the pipelines
-	 */
+	public Map<String, Set<String>> getDestinationPipelines() {
+		return destinationPipelines;
+	}
+
+	public void setDestinationPipelines(
+			Map<String, Set<String>> destinationPipelines) {
+		this.destinationPipelines = destinationPipelines;
+	}
+
 	public Map<String, ActorRef> getPipelines() {
 		return pipelines;
 	}
-
-	/**
-	 * @return the eventSourcePipelines
-	 */
-	public Map<String, Set<String>> getEventSourcePipelines() {
-		return eventSourcePipelines;
-	}
-	
 	
 }

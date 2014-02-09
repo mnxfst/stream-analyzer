@@ -21,6 +21,9 @@ todo:
 	  as the pipeline initializes the nodes subsequently it could lead to an error if
 	  node 1 references node 10 as node 10 may not be fully initialized yet....
 	  idea: initialize all nodes and send actor refs later on via broadcast message
+	
+	* refactor broadcasting to actor router 
+
     
 message format:
 	* event source identifier (lower-case!!!)

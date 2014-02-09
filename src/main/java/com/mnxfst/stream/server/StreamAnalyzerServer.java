@@ -45,7 +45,7 @@ import akka.actor.ActorSystem;
 import akka.actor.Props;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mnxfst.stream.listener.AbstractStreamEventListener;
+import com.mnxfst.stream.listener.StreamEventListener;
 import com.mnxfst.stream.listener.StreamEventListenerConfiguration;
 import com.mnxfst.stream.listener.webtrends.WebTrendsStreamListenerConfiguration;
 import com.mnxfst.stream.processing.dispatcher.StreamEventDispatcher;
@@ -71,7 +71,7 @@ public class StreamAnalyzerServer {
 	/** dispatchers receiving inbound traffic from listeners */
 	private Map<String, ActorRef> dispatchers;
 	/** listeners receiving traffic from external source */
-	private Map<String, AbstractStreamEventListener> listeners;
+	private Map<String, StreamEventListener> listeners;
 		
 	/**
 	 * Initializes and ramps up the stream analyzer server component
@@ -98,14 +98,14 @@ public class StreamAnalyzerServer {
 		}
 	}
 	
-	protected void initialize(final StreamAnalyzerServerConfiguration configuration) {
+	protected void initialize(final StreamAnalyzerServerConfiguration configuration) throws ClassNotFoundException {
 
 		// handler to gracefully shutdown the actor system 
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 		    public void run() {
 		    	
 		    	for(final String listenerId : listeners.keySet()) {
-		    		AbstractStreamEventListener listener = listeners.get(listenerId);
+		    		StreamEventListener listener = listeners.get(listenerId);
 		    		if(listener != null)
 		    			listener.shutdown();
 		    		actorSystem.log().info("[listener="+listenerId+", state=shutdown]");
@@ -130,7 +130,7 @@ public class StreamAnalyzerServer {
 	}
 	
 	/**
-	 * Initializes the {@link AbstractStreamEventListener stream event listeners}, ramps them up and assigns
+	 * Initializes the {@link StreamEventListener stream event listeners}, ramps them up and assigns
 	 * them to the {@link ExecutorService executor} taking care of it
 	 * @param listenerConfigurations
 	 * @param dispatchers
@@ -143,23 +143,25 @@ public class StreamAnalyzerServer {
 	 * @throws IllegalAccessException 
 	 * @throws InstantiationException 
 	 */
-	protected Map<String, AbstractStreamEventListener> initializeListeners(final List<StreamEventListenerConfiguration> listenerConfigurations,
+	protected Map<String, StreamEventListener> initializeListeners(final List<StreamEventListenerConfiguration> listenerConfigurations,
 			Map<String, ActorRef> dispatchers) {
 		
 		if(listenerConfigurations == null || listenerConfigurations.isEmpty())
 			throw new RuntimeException("Missing required listener configuration");
 		
-		Map<String, AbstractStreamEventListener> listeners = new HashMap<>();
+		Map<String, StreamEventListener> listeners = new HashMap<>();
 		
 		for(final StreamEventListenerConfiguration cfg : listenerConfigurations) {
 			if(cfg == null)
 				continue;
 			
 			try {
-				final ActorRef dispatcherRef = dispatchers.get(cfg.getDispatcherIdentifier());
 				Class<?> dispatcherClass = Class.forName(cfg.getListenerClassName());
-				Constructor<?> constructor = dispatcherClass.getConstructor(WebTrendsStreamListenerConfiguration.class, ActorRef.class);
-				final AbstractStreamEventListener listener = (AbstractStreamEventListener)constructor.newInstance(cfg, dispatcherRef);
+				Constructor<?> constructor = dispatcherClass.getConstructor(WebTrendsStreamListenerConfiguration.class);
+				final StreamEventListener listener = (StreamEventListener)constructor.newInstance(cfg);
+				
+				for(String dispatcherId : cfg.getDispatchers())
+					listener.addDispatcherReference(dispatchers.get(dispatcherId));
 				listeners.put(cfg.getIdentifier(), listener);
 			} catch(Exception e) {
 				throw new RuntimeException("Failed to initialize listener '"+cfg.getIdentifier()+"'. Error: " + e.getMessage(), e);
@@ -185,9 +187,10 @@ public class StreamAnalyzerServer {
 	 * @param dispatcherConfigurations
 	 * @param pipelines
 	 * @return
+	 * @throws ClassNotFoundException 
 	 */
 	protected Map<String, ActorRef> initializeDispatchers(final List<StreamEventDispatcherConfiguration> dispatcherConfigurations, 
-			final Map<String, ActorRef> pipelines) {
+			final Map<String, ActorRef> pipelines) throws ClassNotFoundException {
 		
 		// check input for any configs 
 		if(dispatcherConfigurations == null || dispatcherConfigurations.isEmpty())
@@ -199,25 +202,25 @@ public class StreamAnalyzerServer {
 			if(cfg == null)
 				continue;
 			
-			// fetch all pipelines from event source configurations
-			Set<String> allEventSourcePipelines = new HashSet<>();
-			for(String eventSouceId : cfg.getEventSourcePipelines().keySet()) {
-				Set<String> cfgEventSourcePipelines = cfg.getEventSourcePipelines().get(eventSouceId);
-				if(cfgEventSourcePipelines != null && !cfgEventSourcePipelines.isEmpty())
-					allEventSourcePipelines.addAll(cfgEventSourcePipelines);
+			// fetch all 
+			Set<String> allPipelinesIdentifiers = new HashSet<>();
+			for(String destinationId : cfg.getDestinationPipelines().keySet()) {
+				Set<String> pipelineIds = cfg.getDestinationPipelines().get(destinationId);
+				if(pipelineIds != null && !pipelineIds.isEmpty())
+					allPipelinesIdentifiers.addAll(pipelineIds);
 				else
-					throw new RuntimeException("Missing pipeline configuration for event source '" + eventSouceId + "'");
+					throw new RuntimeException("Missing pipeline configuration for event source '" + destinationId + "'");
 			}
 			
 			// step through all pipelines and retrieve references towards their entry points
-			for(String pipelineId : allEventSourcePipelines) {
+			for(String pipelineId : allPipelinesIdentifiers) {
 				if(pipelines.containsKey(pipelineId))
 					cfg.addPipeline(pipelineId, pipelines.get(pipelineId));
 				else
 					throw new RuntimeException("Missing pipeline instance for '"+pipelineId+"'");
 			}
 				
-			final ActorRef dispatcherRef = actorSystem.actorOf(Props.create(StreamEventDispatcher.class, cfg), cfg.getIdentifier());
+			final ActorRef dispatcherRef = actorSystem.actorOf(Props.create(Class.forName(cfg.getDispatcherClass()), cfg), cfg.getIdentifier());
 			if(dispatcherRef == null)
 				throw new RuntimeException("Failed to initialize dispatcher '"+cfg.getIdentifier()+"'");
 			dispatchers.put(cfg.getIdentifier(), dispatcherRef);

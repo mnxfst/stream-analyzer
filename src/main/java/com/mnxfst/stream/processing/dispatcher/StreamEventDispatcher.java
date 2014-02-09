@@ -34,15 +34,12 @@ import com.mnxfst.stream.processing.message.StreamEventMessage;
  * @author mnxfst
  * @since Jan 30, 2014
  */
-public class StreamEventDispatcher extends UntypedActor {
-	
-	/** dispatcher configuration */
-	private final StreamEventDispatcherConfiguration configuration;
+public abstract class StreamEventDispatcher extends UntypedActor {
 	
 	/** mapping from pipeline identifiers towards the initial node references */
 	private Map<String, ActorRef> pipelines = new HashMap<>();
-	/** mapping of event source towards a set pipelines that receive inbound messages of that source */
-	private Map<String, Set<String>> eventSourcePipelines = new HashMap<>();
+	/** mapping of destinations towards a set pipelines that receive inbound messages of that source */
+	private Map<String, Set<String>> destinationPipelines = new HashMap<>();
 	
 	/**
 	 * Initializes the dispatcher using the provided input
@@ -53,67 +50,50 @@ public class StreamEventDispatcher extends UntypedActor {
 			throw new RuntimeException("Missing required configuration");
 		if(configuration.getPipelines() == null || configuration.getPipelines().isEmpty())
 			throw new RuntimeException("Missing required pipeline configurations");
-		if(configuration.getEventSourcePipelines() == null || configuration.getEventSourcePipelines().isEmpty())
-			throw new RuntimeException("Missing required event source-to-pipelines mappings");
-		this.configuration = configuration;
+		if(configuration.getDestinationPipelines() == null || configuration.getDestinationPipelines().isEmpty())
+			throw new RuntimeException("Missing required destination-to-pipelines mappings");
+		this.pipelines = configuration.getPipelines();
+		this.destinationPipelines = configuration.getDestinationPipelines();
 	}
 	
 	/**
-	 * @see akka.actor.UntypedActor#preStart()
+	 * Dispatches the inbound {@link StreamEventMessage stream event} according to the implementing
+	 * dispatcher rules
+	 * @param streamEventMessage
+	 * @throws Exception
 	 */
-	public void preStart() throws Exception {
-		super.preStart();
-		this.pipelines = this.configuration.getPipelines();
-		this.eventSourcePipelines = this.configuration.getEventSourcePipelines();
-	}
+	protected abstract void dispatchMessage(final StreamEventMessage streamEventMessage) throws Exception; 
 
 	/**
 	 * @see akka.actor.UntypedActor#onReceive(java.lang.Object)
 	 */
 	public void onReceive(Object message) throws Exception {
 
-		if(message instanceof StreamEventMessage) {			
+		if(message instanceof StreamEventMessage) {
 			dispatchMessage((StreamEventMessage)message);			
 		} else {
 			unhandled(message);
-		}
-		
+		}		
 	}
-
+	
 	/**
-	 * Dispatches the received {@link StreamEventMessage event message} to configured
-	 * pipelines. 
-	 * @param msg
+	 * Forwards the given message towards the destination referenced
+	 * @param streamEventMessage
+	 * @param destinationId
 	 */
-	protected void dispatchMessage(final StreamEventMessage msg) {
+	protected void forwardMessage(final StreamEventMessage streamEventMessage, final String destinationId) {
 		
-		// message must not be null ... obviously
-		if(msg == null) {
-			// TODO do we need some reporting here?
+		// ensure that the destination identifier is not empty
+		if(StringUtils.isBlank(destinationId)) {
+			context().system().log().error("Missing required destination identifier. Ignoring message.");
 			return;
 		}
 		
-		// event source identifier must be available to properly identify pipeline  
-		if(StringUtils.isBlank(msg.getEventSourceId())) {
-			// TODO do we need some reporting here
+		// the destination identifier must point to an existing set of pipelines
+		if(!this.destinationPipelines.containsKey(destinationId)) {
+			context().system().log().error("Found no set of destination pipelines for '"+destinationId+"'. Ignoring message."); 
 			return;
-		}
-		
-		// event source identifier must point to a processing pipeline
-		if(!this.eventSourcePipelines.containsKey(msg.getEventSourceId())) {
-			// TODO  any more logging required?
-			context().system().log().error("No pipeline found for event source identifier '"+msg.getEventSourceId()+"'. Ignoring message."); 
-			return;
-		}
-		
-		Set<String> pipelineIdentifiers = this.eventSourcePipelines.get(msg.getEventSourceId());
-		if(pipelineIdentifiers != null && !pipelineIdentifiers.isEmpty()) {
-			for(String pipelineId : pipelineIdentifiers) {
-				ActorRef pipelineEntryPointRef = this.pipelines.get(pipelineId);
-				pipelineEntryPointRef.tell(msg, getSelf());
-			}
-		} else {
-			context().system().log().error("No pipeline found for event source identifier '"+msg.getEventSourceId()+"'. Ignoring message.");
-		}
+		}		
 	}
+	
 }

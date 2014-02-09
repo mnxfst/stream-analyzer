@@ -1,11 +1,24 @@
 /**
- * Copyright (c) 2014, otto group and/or its affiliates. All rights reserved.
- * OTTO GROUP PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ * Copyright 2014 Christian Kreutzfeldt
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package com.mnxfst.stream.listener.webtrends;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -39,9 +52,8 @@ public class WebTrendsStreamSocket {
 	private final String streamVersion;
 	private final String streamSchemaVersion;
 	
-	private final ActorRef dispatcherRef;
+	private final Set<ActorRef> dispatcherReferences = new HashSet<>();
 	private final CountDownLatch latch = new CountDownLatch(1);
-	private long eventCounter = 0;
 
 	/**
 	 * Initializes the socket using the provided input
@@ -50,15 +62,21 @@ public class WebTrendsStreamSocket {
 	 * @param streamQuery query that must be applied on the stream to filter messages
 	 * @param streamVersion stream version
 	 * @param streamSchemaVersion schema version
-	 * @param dispatcherRef reference towards the stream event analyzer dispatcher
 	 */
-	public WebTrendsStreamSocket(final String oAuthToken, final String streamType, final String streamQuery, final String streamVersion, final String streamSchemaVersion, final ActorRef dispatcherRef) {
+	public WebTrendsStreamSocket(final String oAuthToken, final String streamType, final String streamQuery, final String streamVersion, final String streamSchemaVersion) {
 		this.oAuthToken = oAuthToken;
 		this.streamType = streamType;
 		this.streamQuery = streamQuery;
 		this.streamSchemaVersion = streamSchemaVersion;
 		this.streamVersion = streamVersion;
-		this.dispatcherRef = dispatcherRef;
+	}
+	
+	/**
+	 * Adds a new reference towards a message receiving {@link ActorRef dispatcher} 
+	 * @param dispatcherReference
+	 */
+	public void addDispatcherReference(final ActorRef dispatcherReference) {
+		this.dispatcherReferences.add(dispatcherReference);
 	}
 	
 	/**
@@ -99,12 +117,8 @@ public class WebTrendsStreamSocket {
 	 */
 	@OnWebSocketMessage
 	public void onMessage(String message) {
-		eventCounter++;
-//		if(eventCounter == 100)
-//			System.out.println(message);
-		this.dispatcherRef.tell(new StreamEventMessage(EVENT_SOURCE_ID, EVENT_SOURCE_ID, System.currentTimeMillis(), message), null);
-//		if(eventCounter % 100 == 0)
-//			System.out.println(eventCounter + " events received");
+		for(final ActorRef dispatcherRef : this.dispatcherReferences)
+			dispatcherRef.tell(new StreamEventMessage(EVENT_SOURCE_ID, EVENT_SOURCE_ID, System.currentTimeMillis(), message), null);
 	}
 
 	/**

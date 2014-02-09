@@ -36,7 +36,7 @@ import com.mnxfst.stream.processing.pipeline.StreamEventPipelineEntryPoint;
  * @author mnxfst
  * @since 03.02.2014
  */
-public abstract class AbstractStreamEventProcessingNode extends UntypedActor {
+public abstract class StreamEventProcessingNode extends UntypedActor {
 
 	/** reference to default error handler(s) */
 	public static final String DEFAULT_ERROR_HANDLER = "default";
@@ -51,7 +51,7 @@ public abstract class AbstractStreamEventProcessingNode extends UntypedActor {
 	 * @param identifier
 	 * @param errorHandler
 	 */
-	public AbstractStreamEventProcessingNode(final StreamEventProcessingNodeConfiguration configuration) {
+	public StreamEventProcessingNode(final StreamEventProcessingNodeConfiguration configuration) {
 		
 		if(configuration == null)
 			throw new RuntimeException("Required configuration missing");		

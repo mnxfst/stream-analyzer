@@ -21,7 +21,7 @@ import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 
-import com.mnxfst.stream.processing.AbstractStreamEventProcessingNode;
+import com.mnxfst.stream.processing.StreamEventProcessingNode;
 import com.mnxfst.stream.processing.message.StreamEventMessage;
 import com.mnxfst.stream.processing.model.TransportAddress;
 
@@ -32,7 +32,7 @@ import com.mnxfst.stream.processing.model.TransportAddress;
  * @author mnxfst
  * @since 31.01.2014
  */
-public class StreamEventESWriter extends AbstractStreamEventProcessingNode {
+public class StreamEventESWriter extends StreamEventProcessingNode {
 
 	/** es writer configuration */
 	private final StreamEventESWriterConfiguration configuration;
@@ -80,7 +80,7 @@ public class StreamEventESWriter extends AbstractStreamEventProcessingNode {
 	}
 
 	/**
-	 * @see com.mnxfst.stream.processing.AbstractStreamEventProcessingNode#processEvent(java.lang.Object)
+	 * @see com.mnxfst.stream.processing.StreamEventProcessingNode#processEvent(java.lang.Object)
 	 */
 	protected void processEvent(Object message) throws Exception {
 

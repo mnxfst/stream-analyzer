@@ -1,6 +1,17 @@
 /**
- * Copyright (c) 2014, otto group and/or its affiliates. All rights reserved.
- * OTTO GROUP PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ * Copyright 2014 Christian Kreutzfeldt
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package com.mnxfst.stream.listener.webtrends;
@@ -10,26 +21,16 @@ import com.fasterxml.jackson.annotation.JsonRootName;
 import com.mnxfst.stream.listener.StreamEventListenerConfiguration;
 
 /**
- * 
+ * Holds all information required for setting up the {@link WebTrendsStreamAPIListener webtrends stream api listener} 
  * @author mnxfst
  * @since 06.02.2014
  *
  */
 @JsonRootName ( value = "webTrendsListenerConfiguration" )
-public class WebTrendsStreamListenerConfiguration implements
-		StreamEventListenerConfiguration {
+public class WebTrendsStreamListenerConfiguration extends StreamEventListenerConfiguration {
 
 	private static final long serialVersionUID = 7518374251142479068L;
 
-	/** listener id */
-	@JsonProperty ( value = "identifier", required = true )
-	private String identifier = null;
-	/** id of dispatcher receiving all listener inbound traffic */
-	@JsonProperty ( value = "dispatcherIdentifier", required = true )
-	private String dispatcherIdentifier = null;
-	/** class implementing the listener */
-	@JsonProperty ( value = "listenerClassName", required = true )
-	private String listenerClassName = null;
 	/** client identifier required for authentication */
 	@JsonProperty ( value = "clientId", required = true )
 	private String clientId = null;
@@ -69,39 +70,13 @@ public class WebTrendsStreamListenerConfiguration implements
 	 */
 	public WebTrendsStreamListenerConfiguration(final String identifier, final String dispatcherIdentifier, final String listenerClassName, 
 			final String clientId, final String clientSecret, final String streamType, final String streamQuery, final String streamVersion, final String streamSchemaVersion) {
-		this.identifier = identifier;
-		this.dispatcherIdentifier = dispatcherIdentifier;
-		this.listenerClassName = listenerClassName;
+		super(identifier, listenerClassName);
 		this.clientId = clientId;
 		this.clientSecret = clientSecret;
 		this.streamType = streamType;
 		this.streamQuery = streamQuery;
 		this.streamVersion = streamVersion;
 		this.streamSchemaVersion = streamSchemaVersion;
-	}
-
-	public String getIdentifier() {
-		return identifier;
-	}
-
-	public void setIdentifier(String identifier) {
-		this.identifier = identifier;
-	}
-
-	public String getDispatcherIdentifier() {
-		return dispatcherIdentifier;
-	}
-
-	public void setDispatcherIdentifier(String dispatcherIdentifier) {
-		this.dispatcherIdentifier = dispatcherIdentifier;
-	}
-
-	public String getListenerClassName() {
-		return listenerClassName;
-	}
-
-	public void setListenerClassName(String listenerClassName) {
-		this.listenerClassName = listenerClassName;
 	}
 
 	public String getClientId() {

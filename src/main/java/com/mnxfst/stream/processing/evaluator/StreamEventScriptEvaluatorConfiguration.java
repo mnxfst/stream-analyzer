@@ -32,22 +32,10 @@ import com.mnxfst.stream.processing.StreamEventProcessingNodeConfiguration;
  * @since 03.02.2014
  */
 @JsonRootName ( value = "scriptEvaluatorConfig" )
-public class StreamEventScriptEvaluatorConfiguration implements StreamEventProcessingNodeConfiguration {
+public class StreamEventScriptEvaluatorConfiguration extends StreamEventProcessingNodeConfiguration {
 
 	private static final long serialVersionUID = -1272357972067640074L;
 
-	/** processing node class - required for dynamic node instantiation */
-	@JsonProperty ( value = "processingNodeClass", required = true )
-	private String processingNodeClass = null;
-	/** analyzer id used for referencing the component from within other pipeline elements */ 
-	@JsonProperty( value = "identifier", required = true )
-	private String identifier = null;
-	/** description */
-	@JsonProperty ( value = "description", required = false )
-	private String description = null;
-	/** number of node instances - value of less than 1 avoids the instantiation of any router */
-	@JsonProperty ( value = "numOfNodeInstances", required = true )
-	private int numOfNodeInstances = 0; // value o
 	/** script to be applied on inbound stream event messages */
 	@JsonProperty ( value = "script", required = true )
 	private String script = null;	
@@ -73,12 +61,9 @@ public class StreamEventScriptEvaluatorConfiguration implements StreamEventProce
 	 * @param scriptEngineName
 	 */
 	public StreamEventScriptEvaluatorConfiguration(final String processingNodeClass, final String identifier, final String description, final int numOfNodeInstances, final String script, final String scriptEngineName) {
-		this.processingNodeClass = processingNodeClass;
-		this.identifier = identifier;
-		this.description = description;
+		super(processingNodeClass, identifier, description, numOfNodeInstances);
 		this.script = script;
 		this.scriptEngineName = scriptEngineName;
-		this.numOfNodeInstances = numOfNodeInstances;
 	}
 	
 	/**
@@ -94,22 +79,6 @@ public class StreamEventScriptEvaluatorConfiguration implements StreamEventProce
 			fwds.addAll(forwards);
 			this.forwardingRules.put(scriptEvaluationResult, fwds);
 		}
-	}
-
-	public String getProcessingNodeClass() {
-		return processingNodeClass;
-	}
-
-	public void setProcessingNodeClass(String processingNodeClass) {
-		this.processingNodeClass = processingNodeClass;
-	}
-
-	public String getIdentifier() {
-		return identifier;
-	}
-
-	public void setIdentifier(String identifier) {
-		this.identifier = identifier;
 	}
 
 	public String getScript() {
@@ -135,23 +104,6 @@ public class StreamEventScriptEvaluatorConfiguration implements StreamEventProce
 	public void setForwardingRules(Map<String, Set<String>> forwardingRules) {
 		this.forwardingRules = forwardingRules;
 	}
-
-	public String getDescription() {
-		return description;
-	}
-
-	public void setDescription(String description) {
-		this.description = description;
-	}
-
-	public int getNumOfNodeInstances() {
-		return numOfNodeInstances;
-	}
-
-	public void setNumOfNodeInstances(int numOfNodeInstances) {
-		this.numOfNodeInstances = numOfNodeInstances;
-	}
-
 
 	
 }

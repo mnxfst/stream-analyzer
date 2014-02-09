@@ -29,7 +29,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import akka.actor.ActorRef;
 
-import com.mnxfst.stream.processing.AbstractStreamEventProcessingNode;
+import com.mnxfst.stream.processing.StreamEventProcessingNode;
 import com.mnxfst.stream.processing.message.PipelineNodeReferencesMessage;
 import com.mnxfst.stream.processing.message.StreamEventMessage;
 
@@ -41,7 +41,7 @@ import com.mnxfst.stream.processing.message.StreamEventMessage;
  * @since 03.02.2014
  * TODO testing
  */
-public class StreamEventScriptEvaluator extends AbstractStreamEventProcessingNode {
+public class StreamEventScriptEvaluator extends StreamEventProcessingNode {
 
 	/** timeout (in seconds) applied for actor selection */
 	public static final long ACTOR_SELECTION_TIMEOUT = 2;
@@ -62,8 +62,6 @@ public class StreamEventScriptEvaluator extends AbstractStreamEventProcessingNod
 	private ScriptEngine scriptEngine;
 	/** forwarding rules */
 	private final Map<String, Set<ActorRef>> forwardingRules = new HashMap<>();
-	/** event counter */
-	private long eventCount = 0;
 	
 	/**
 	 * Initializes the evaluator using the provided input
@@ -117,13 +115,12 @@ public class StreamEventScriptEvaluator extends AbstractStreamEventProcessingNod
 	}
 
 	/**
-	 * @see com.mnxfst.stream.processing.AbstractStreamEventProcessingNode#processEvent(java.lang.Object)
+	 * @see com.mnxfst.stream.processing.StreamEventProcessingNode#processEvent(java.lang.Object)
 	 */
 	protected void processEvent(Object message) throws Exception {
 		
 		if(message instanceof StreamEventMessage) {
 			
-			eventCount++;
 			StreamEventMessage msg = (StreamEventMessage)message;
 			
 			// analyze message with configured script
@@ -197,7 +194,7 @@ public class StreamEventScriptEvaluator extends AbstractStreamEventProcessingNod
 	}
 	
 	/**
-	 * Register {@link AbstractStreamEventProcessingNode forwards} according to the configuration by taking
+	 * Register {@link StreamEventProcessingNode forwards} according to the configuration by taking
 	 * their {@link ActorRef references} from the inbound {@link PipelineNodeReferencesMessage message}
 	 * @param refMessage
 	 */
