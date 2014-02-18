@@ -34,6 +34,12 @@ import com.mnxfst.stream.processing.model.TransportAddress;
  */
 public class StreamEventESWriter extends StreamEventProcessingNode {
 
+	/** custom attribute possibly holding index */
+	public static final String CUSTOM_ATTR_INDEX = "esWriterIndex";
+	/** custom attribute possibly holding document type */
+	public static final String CUSTOM_ATTR_DOC_TYPE = "esWriterDocumentType";
+	
+	
 	/** es writer configuration */
 	private final StreamEventESWriterConfiguration configuration;
 	
@@ -86,8 +92,18 @@ public class StreamEventESWriter extends StreamEventProcessingNode {
 
 		if(message instanceof StreamEventMessage) {
 			StreamEventMessage msg = (StreamEventMessage)message;
+			
+			String esIndex = msg.getCustomAttributes().get(CUSTOM_ATTR_INDEX);
+			if(StringUtils.isBlank(esIndex))
+				esIndex = configuration.getEsIndex();
+			String esDocumentType = msg.getCustomAttributes().get(CUSTOM_ATTR_DOC_TYPE);
+			if(StringUtils.isBlank(esDocumentType))
+				esDocumentType = configuration.getDocumentType();
+			
+//			System.out.println("Writing to: " + esIndex + "/" + esDocumentType);
+			
 			if(StringUtils.isNotBlank(msg.getContent()))
-				this.esClient.prepareIndex(configuration.getEsIndex(), configuration.getDocumentType()).setSource(msg.getContent()).execute().actionGet();
+				this.esClient.prepareIndex(esIndex.toLowerCase(), esDocumentType.toLowerCase()).setSource(msg.getContent()).execute().actionGet();
 			else 
 				System.out.println(msg.getContent());
 			// TODO error handling

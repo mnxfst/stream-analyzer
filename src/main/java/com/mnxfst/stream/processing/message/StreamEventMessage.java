@@ -17,7 +17,9 @@ package com.mnxfst.stream.processing.message;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
@@ -52,6 +54,10 @@ public class StreamEventMessage implements Serializable {
 	/** error stack */
 	@JsonProperty ( value = "errorStack", required = true )
 	private List<Error> errorStack = new ArrayList<>();
+	
+	/** custom attributes */
+	@JsonProperty ( value = "customAttributes", required = false )
+	private Map<String, String> customAttributes = new HashMap<>();
 	
 	public StreamEventMessage() {		
 	}
@@ -88,6 +94,15 @@ public class StreamEventMessage implements Serializable {
 	public void addError(final String key, final String componentId, final String location, final String message) {
 		this.errorStack.add(new Error(key, componentId, location, message));
 	}
+	
+	/**
+	 * Adds a new custom variable + value to the message
+	 * @param key
+	 * @param value
+	 */
+	public void addCustomAttribute(final String key, final String value) {
+		this.customAttributes.put(key, value);
+	}
 
 	public String getEventSourceId() {
 		return eventSourceId;
@@ -119,6 +134,22 @@ public class StreamEventMessage implements Serializable {
 
 	public void setContent(String content) {
 		this.content = content;
+	}
+
+	public List<Error> getErrorStack() {
+		return errorStack;
+	}
+
+	public void setErrorStack(List<Error> errorStack) {
+		this.errorStack = errorStack;
+	}
+
+	public Map<String, String> getCustomAttributes() {
+		return customAttributes;
+	}
+
+	public void setCustomAttributes(Map<String, String> customAttributes) {
+		this.customAttributes = customAttributes;
 	}
 	
 }

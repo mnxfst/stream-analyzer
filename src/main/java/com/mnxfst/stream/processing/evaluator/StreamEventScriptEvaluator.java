@@ -32,6 +32,7 @@ import akka.actor.ActorRef;
 import com.mnxfst.stream.processing.StreamEventProcessingNode;
 import com.mnxfst.stream.processing.message.PipelineNodeReferencesMessage;
 import com.mnxfst.stream.processing.message.StreamEventMessage;
+import com.mnxfst.stream.processing.persistence.StreamEventESWriter;
 
 /**
  * Pipeline element which receives a script during initialization and executes that against an
@@ -160,6 +161,8 @@ public class StreamEventScriptEvaluator extends StreamEventProcessingNode {
 		this.scriptEngine.eval(this.script);
 		String messageContent = (String)this.scriptEngine.get(SCRIPT_EVENT_CONTENT);
 		streamEventMessage.setContent(messageContent);
+		streamEventMessage.addCustomAttribute(StreamEventESWriter.CUSTOM_ATTR_INDEX, (String)this.scriptEngine.get(StreamEventESWriter.CUSTOM_ATTR_INDEX));
+		streamEventMessage.addCustomAttribute(StreamEventESWriter.CUSTOM_ATTR_DOC_TYPE, (String)this.scriptEngine.get(StreamEventESWriter.CUSTOM_ATTR_DOC_TYPE));
 		return (String)this.scriptEngine.get(SCRIPT_RESULT);
 	}
 	
