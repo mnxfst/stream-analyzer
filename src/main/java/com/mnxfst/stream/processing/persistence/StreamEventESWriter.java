@@ -88,9 +88,9 @@ public class StreamEventESWriter extends StreamEventProcessingNode {
 			StreamEventMessage msg = (StreamEventMessage)message;
 			if(StringUtils.isNotBlank(msg.getContent()))
 				this.esClient.prepareIndex(configuration.getEsIndex(), configuration.getDocumentType()).setSource(msg.getContent()).execute().actionGet();
-///			else 
-//				// TODO error handling
-//			System.out.println(msg.getContent());
+			else 
+				System.out.println(msg.getContent());
+			// TODO error handling
 		} else {
 			unhandled(message);
 		}

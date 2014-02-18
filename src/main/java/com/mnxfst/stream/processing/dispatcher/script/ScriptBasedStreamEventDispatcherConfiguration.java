@@ -38,6 +38,13 @@ public class ScriptBasedStreamEventDispatcherConfiguration extends StreamEventDi
 	private String scriptEngineName = null;
 
 	/**
+	 * Default constructor
+	 */
+	public ScriptBasedStreamEventDispatcherConfiguration() {
+		
+	}
+	
+	/**
 	 * Initializes the configuration using the provided input
 	 * @param identifier
 	 * @param description

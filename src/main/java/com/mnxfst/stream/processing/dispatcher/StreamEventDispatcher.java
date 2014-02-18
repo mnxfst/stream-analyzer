@@ -88,12 +88,36 @@ public abstract class StreamEventDispatcher extends UntypedActor {
 			context().system().log().error("Missing required destination identifier. Ignoring message.");
 			return;
 		}
-		
+				
 		// the destination identifier must point to an existing set of pipelines
 		if(!this.destinationPipelines.containsKey(destinationId)) {
 			context().system().log().error("Found no set of destination pipelines for '"+destinationId+"'. Ignoring message."); 
 			return;
-		}		
+		}
+		
+		// fetch set of pipelines referenced by the destination identifier
+		Set<String> destinationPipelineIdentifiers = this.destinationPipelines.get(destinationId);
+		if(destinationPipelineIdentifiers == null || destinationPipelineIdentifiers.isEmpty()) {
+			context().system().log().error("Set of destination pipelines referenced by '"+destinationId+"' is empty or null. Ignoring message."); 
+			return;
+		}
+		
+		int successCount = 0;
+		int errorCount = 0;
+		// step through identifiers, fetch pipelines from map and forward the message to each one
+		for(String destPipelineId : destinationPipelineIdentifiers) {
+			
+			final ActorRef pipelineRef = this.pipelines.get(destPipelineId);
+			if(pipelineRef != null) {
+				pipelineRef.tell(streamEventMessage, getSelf());
+				successCount++;
+			} else {
+				context().system().log().error("Referenced pipeline '"+destPipelineId + "' not found");
+				errorCount++;
+			}			
+		}
+		
+		context().system().log().debug("Message forwarded to " + successCount + " of " + destinationPipelineIdentifiers.size() + " pipelines. Errors found: " + errorCount);
 	}
 	
 }

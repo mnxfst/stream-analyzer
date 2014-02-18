@@ -1,3 +1,8 @@
-Listeners
+steps:
 
-The listener components are started inside a
+(1) configure a set of processing nodes
+(2) configure a set of pipelines being assigned an arbitrary number of processing nodes
+(3) configure a set of dispatchers referencing an arbitrary number of pipelines receiving inbound data
+(4) configure listeners referencing an arbitrary number of dispatchers
+
+ 

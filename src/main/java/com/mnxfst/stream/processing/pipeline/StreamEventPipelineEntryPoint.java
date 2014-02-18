@@ -23,6 +23,7 @@ import org.apache.commons.lang3.StringUtils;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.actor.UntypedActor;
+import akka.routing.Broadcast;
 import akka.routing.RoundRobinRouter;
 
 import com.mnxfst.stream.processing.StreamEventProcessingNodeConfiguration;
@@ -137,8 +138,8 @@ public class StreamEventPipelineEntryPoint extends UntypedActor {
 		
 		// tell all sub-nodes about the others
 		for(String refId : this.pipelineNodeRefs.keySet()) {
-			final ActorRef nodeRef = this.pipelineNodeRefs.get(refId);			
-			nodeRef.tell(nodeReferencesMessage, getSelf());
+			final ActorRef nodeRef = this.pipelineNodeRefs.get(refId);
+			nodeRef.tell(new Broadcast(nodeReferencesMessage), getSelf());
 		}
 		
 		context().system().log().info("[pipeline="+configuration.getIdentifier()+", entryPoint="+configuration.getEntryPointId()+", nodes="+pipelineNodeRefs.size()+"]");

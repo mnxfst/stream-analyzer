@@ -177,11 +177,10 @@ public class StreamEventScriptEvaluator extends StreamEventProcessingNode {
 		}
 		
 		if(!StringUtils.equalsIgnoreCase(FORWARD_IGNORE_MESSAGE, scriptResponse)) {
-			
 			// fetch the receivers configured for the script response, otherwise forward the message to the error handler
 			Set<ActorRef> forwards = this.forwardingRules.get(scriptResponse);
-			if(forwards == null || forwards.isEmpty()) {
-				reportError(streamEventMessage, "stream.analyzer.script.forwarding.noRules", "forwardStreamEvent", "no forwarding rule found for response '"+scriptResponse+"'");
+			if(forwards == null || forwards.isEmpty()) {				
+				reportError(streamEventMessage, "stream.analyzer.script.forwarding.noRules", "forwardStreamEvent", "no forwarding rule found for response '"+scriptResponse+"' at " + identifier);
 				return;
 			}
 			

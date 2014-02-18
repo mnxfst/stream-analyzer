@@ -59,7 +59,6 @@ public class WebTrendsStreamListenerConfiguration extends StreamEventListenerCon
 	/**
 	 * Initializes the configuration using the provided input
 	 * @param identifier
-	 * @param dispatcherIdentifier
 	 * @param listenerClassName
 	 * @param clientId
 	 * @param clientSecret
@@ -68,7 +67,7 @@ public class WebTrendsStreamListenerConfiguration extends StreamEventListenerCon
 	 * @param streamVersion
 	 * @param streamSchemaVersion
 	 */
-	public WebTrendsStreamListenerConfiguration(final String identifier, final String dispatcherIdentifier, final String listenerClassName, 
+	public WebTrendsStreamListenerConfiguration(final String identifier, final String listenerClassName, 
 			final String clientId, final String clientSecret, final String streamType, final String streamQuery, final String streamVersion, final String streamSchemaVersion) {
 		super(identifier, listenerClassName);
 		this.clientId = clientId;

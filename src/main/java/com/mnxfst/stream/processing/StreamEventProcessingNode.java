@@ -42,7 +42,7 @@ public abstract class StreamEventProcessingNode extends UntypedActor {
 	public static final String DEFAULT_ERROR_HANDLER = "default";
 
 	/** analyzer name or identifier */
-	private final String identifier;
+	protected final String identifier;
 	/** error handlers - one per error type (default is required) */
 	private final Map<String, ActorRef> errorHandlers = new HashMap<>();
 
