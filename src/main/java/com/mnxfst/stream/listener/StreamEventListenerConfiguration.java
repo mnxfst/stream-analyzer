@@ -1,9 +1,9 @@
 /**
- * Copyright 2014 Christian Kreutzfeldt
+ *  Copyright 2014 Christian Kreutzfeldt
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -13,78 +13,100 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 package com.mnxfst.stream.listener;
 
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.fasterxml.jackson.annotation.JsonRootName;
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.mnxfst.stream.listener.webtrends.WebTrendsStreamListenerConfiguration;
-import com.mnxfst.stream.processing.dispatcher.StreamEventDispatcher;
+import org.apache.commons.lang3.StringUtils;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Common interface for listener configuration
+ * Common base for all {@link StreamEventListener event listener configurations}
  * @author mnxfst
- * @since 06.02.2014
+ * @since 28.02.2014
  *
  */
-@JsonRootName ( value = "listenerConfiguration" )
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
-@JsonSubTypes ({ @JsonSubTypes.Type(WebTrendsStreamListenerConfiguration.class) })
 public abstract class StreamEventListenerConfiguration implements Serializable {
 
-	private static final long serialVersionUID = -193085026753017503L;
+	private static final long serialVersionUID = -6549690615195743137L;
 
-	/** event listener identifier */
-	private String identifier = null;
-	/** listener class */
-	private String listenerClassName = null;
-	/** references towards dispatchers receiving the inbound traffic */
+	@JsonProperty ( value = "id", required = true )
+	private String id = null;
+	
+	@JsonProperty ( value = "name", required = true )
+	private String name = null;
+	
+	@JsonProperty ( value = "description", required = true ) 
+	private String description = null;
+	
+	@JsonProperty ( value = "version", required = true )
+	private String version = null;
+	
+	@JsonProperty ( value = "dispatchers", required = true )
 	private Set<String> dispatchers = new HashSet<>();
-
+	
 	/**
-	 * Default constructor
+	 * Default constructor - quite obvious, eh ;-)
 	 */
 	public StreamEventListenerConfiguration() {		
 	}
 	
 	/**
 	 * Initializes the configuration using the provided input
-	 * @param identifier
-	 * @param listenerClassName
+	 * @param id
+	 * @param name
+	 * @param description
+	 * @param version
 	 */
-	public StreamEventListenerConfiguration(final String identifier, final String listenerClassName) {
-		this.identifier = identifier;
-		this.listenerClassName = listenerClassName;
+	public StreamEventListenerConfiguration(final String id, final String name, final String description, final String version) {
+		this.id = id;
+		this.name = name;
+		this.description = description;
+		this.version = version;
+	}
+
+	/**
+	 * Adds a new dispatcher as destination of inbound messages
+	 * @param dispatcherId
+	 */
+	public void addDispatcher(final String dispatcherId) {
+		if(StringUtils.isNotBlank(dispatcherId))
+			this.dispatchers.add(dispatcherId);
 	}
 	
-	/**
-	 * Adds a new references towards a {@link StreamEventDispatcher dispatcher} that
-	 * receives traffic from the listener configured through these settings
-	 * @param dispatcherIdentifier
-	 */
-	public void addDispatcher(final String dispatcherIdentifier) {
-		this.dispatchers.add(dispatcherIdentifier);
+	public String getId() {
+		return id;
 	}
 
-	public String getIdentifier() {
-		return identifier;
+	public void setId(String id) {
+		this.id = id;
 	}
 
-	public void setIdentifier(String identifier) {
-		this.identifier = identifier;
+	public String getName() {
+		return name;
 	}
 
-	public String getListenerClassName() {
-		return listenerClassName;
+	public void setName(String name) {
+		this.name = name;
 	}
 
-	public void setListenerClassName(String listenerClassName) {
-		this.listenerClassName = listenerClassName;
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
+	}
+
+	public String getVersion() {
+		return version;
+	}
+
+	public void setVersion(String version) {
+		this.version = version;
 	}
 
 	public Set<String> getDispatchers() {
@@ -94,6 +116,6 @@ public abstract class StreamEventListenerConfiguration implements Serializable {
 	public void setDispatchers(Set<String> dispatchers) {
 		this.dispatchers = dispatchers;
 	}
-	
+	 
 	
 }

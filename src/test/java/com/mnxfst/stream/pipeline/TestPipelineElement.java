@@ -13,39 +13,32 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.mnxfst.stream.listener;
+package com.mnxfst.stream.pipeline;
 
+import com.mnxfst.stream.pipeline.config.PipelineElementConfiguration;
 
 /**
- * Common interface to be implemented by everyone listening to event streams
- * being forwarded into the analyzer
  * @author mnxfst
- * @since 28.02.2014
+ * @since 04.03.2014
  *
  */
-public interface StreamEventListener extends Runnable {
+public class TestPipelineElement extends PipelineElement {
 
-	/** 
-	 * Returns the unique identifier of the listener
-	 * @return
-	 */
-	public String getId();
-	
+	public TestPipelineElement(PipelineElementConfiguration pipelineElementConfiguration) {
+		super(pipelineElementConfiguration);
+	}
+
 	/**
-	 * Returns the unique name of the listener
-	 * @return
-	 */
-	public String getName();
-	
+	 * @see akka.actor.UntypedActor#onReceive(java.lang.Object)
+	 */	
+	public void onReceive(Object message) throws Exception {
+		getSender().tell(message, getSelf());
+	}
+
 	/**
-	 * Returns the description of the listener
-	 * @return
+	 * @see akka.actor.UntypedActor#postStop()
 	 */
-	public String getDescription();
-	
-	/**
-	 * Returns the listener version
-	 * @return
-	 */
-	public String getVersion();
+	public void postStop() throws Exception {		
+	}
+
 }

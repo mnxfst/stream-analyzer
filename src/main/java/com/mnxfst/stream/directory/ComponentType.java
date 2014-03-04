@@ -13,39 +13,18 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.mnxfst.stream.listener;
+package com.mnxfst.stream.directory;
 
+import java.io.Serializable;
 
 /**
- * Common interface to be implemented by everyone listening to event streams
- * being forwarded into the analyzer
+ * Names the allowed component types
  * @author mnxfst
- * @since 28.02.2014
+ * @since 03.03.2014
  *
  */
-public interface StreamEventListener extends Runnable {
+public enum ComponentType implements Serializable {
 
-	/** 
-	 * Returns the unique identifier of the listener
-	 * @return
-	 */
-	public String getId();
+	STREAM_LISTENER, DISPATCHER, PIPELINE_MASTER, PIPELINE_ROOT
 	
-	/**
-	 * Returns the unique name of the listener
-	 * @return
-	 */
-	public String getName();
-	
-	/**
-	 * Returns the description of the listener
-	 * @return
-	 */
-	public String getDescription();
-	
-	/**
-	 * Returns the listener version
-	 * @return
-	 */
-	public String getVersion();
 }
