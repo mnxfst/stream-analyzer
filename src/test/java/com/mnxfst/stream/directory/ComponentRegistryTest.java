@@ -34,8 +34,17 @@ import com.mnxfst.stream.directory.message.ComponentLookupMessage;
 import com.mnxfst.stream.directory.message.ComponentLookupResponseMessage;
 import com.mnxfst.stream.directory.message.ComponentRegistrationMessage;
 import com.mnxfst.stream.directory.message.ComponentRegistrationResponseMessage;
+import com.mnxfst.stream.dispatcher.config.DispatchPolicyConfiguration;
+import com.mnxfst.stream.dispatcher.config.StreamEventMessageDispatcherConfiguration;
+import com.mnxfst.stream.dispatcher.policy.BroadcastDispatchPolicy;
 import com.mnxfst.stream.listener.StreamEventListenerConfiguration;
 import com.mnxfst.stream.listener.webtrends.WebtrendsStreamListener;
+import com.mnxfst.stream.pipeline.PipelineRoot;
+import com.mnxfst.stream.pipeline.config.PipelineElementConfiguration;
+import com.mnxfst.stream.pipeline.config.PipelineRootConfiguration;
+import com.mnxfst.stream.pipeline.element.es.ElasticSearchWriterPipelineElement;
+import com.mnxfst.stream.pipeline.element.script.ScriptEvaluatorPipelineElement;
+import com.mnxfst.stream.server.config.StreamAnalyzerServerConfiguration;
 
 /**
  * Test case for {@link ComponentRegistry component registry}
@@ -183,19 +192,53 @@ public class ComponentRegistryTest {
 	@Test
 	public void test() throws Exception {
 		
-		StreamEventListenerConfiguration configuration = new StreamEventListenerConfiguration(WebtrendsStreamListener.class.getName(), "wt-listener-1", "wt-listener-1", "wt-listener-1", "0.1");		
-		configuration.getSettings().put(WebtrendsStreamListener.WT_CONFIG_AUTH_AUDIENCE, "auth-audience");
-		configuration.getSettings().put(WebtrendsStreamListener.WT_CONFIG_AUTH_SCOPE, "auth-scope");
-		configuration.getSettings().put(WebtrendsStreamListener.WT_CONFIG_AUTH_URL, "auth-url");
-		configuration.getSettings().put(WebtrendsStreamListener.WT_CONFIG_EVENT_STREAM_URL, "stream-url");
-		configuration.getSettings().put(WebtrendsStreamListener.WT_CONFIG_CLIENT_ID, "client-id");
-		configuration.getSettings().put(WebtrendsStreamListener.WT_CONFIG_CLIENT_SECRET, "client-secret");
-		configuration.getSettings().put(WebtrendsStreamListener.WT_CONFIG_STREAM_TYPE, "stream-type");
-		configuration.getSettings().put(WebtrendsStreamListener.WT_CONFIG_STREAM_QUERY, "stream-query");
-		configuration.getSettings().put(WebtrendsStreamListener.WT_CONFIG_STREAM_VERSION, "stream-version");
-		configuration.getSettings().put(WebtrendsStreamListener.WT_CONFIG_SCHEMA_VERSION, "schema-version");
+		///////////////////// LISTENER 
+		StreamEventListenerConfiguration streamListenerCfg = new StreamEventListenerConfiguration(WebtrendsStreamListener.class.getName(), "wt-listener-1", "wt-listener-1", "wt-listener-1", "0.1");		
+		streamListenerCfg.getSettings().put(WebtrendsStreamListener.WT_CONFIG_AUTH_AUDIENCE, "auth-audience");
+		streamListenerCfg.getSettings().put(WebtrendsStreamListener.WT_CONFIG_AUTH_SCOPE, "auth-scope");
+		streamListenerCfg.getSettings().put(WebtrendsStreamListener.WT_CONFIG_AUTH_URL, "auth-url");
+		streamListenerCfg.getSettings().put(WebtrendsStreamListener.WT_CONFIG_EVENT_STREAM_URL, "stream-url");
+		streamListenerCfg.getSettings().put(WebtrendsStreamListener.WT_CONFIG_CLIENT_ID, "client-id");
+		streamListenerCfg.getSettings().put(WebtrendsStreamListener.WT_CONFIG_CLIENT_SECRET, "client-secret");
+		streamListenerCfg.getSettings().put(WebtrendsStreamListener.WT_CONFIG_STREAM_TYPE, "stream-type");
+		streamListenerCfg.getSettings().put(WebtrendsStreamListener.WT_CONFIG_STREAM_QUERY, "stream-query");
+		streamListenerCfg.getSettings().put(WebtrendsStreamListener.WT_CONFIG_STREAM_VERSION, "stream-version");
+		streamListenerCfg.getSettings().put(WebtrendsStreamListener.WT_CONFIG_SCHEMA_VERSION, "schema-version");
+		streamListenerCfg.addDispatcher("root-disp");
+		
+		///////////////////// PIPELINE 
+		PipelineElementConfiguration esElementCfg = new PipelineElementConfiguration("wt-pipe", "es-writer", "Elastic Search Writer", ElasticSearchWriterPipelineElement.class.getName(), 1);
+		esElementCfg.addSetting(ElasticSearchWriterPipelineElement.ES_CLUSTER_NAME, "tracker");
+		esElementCfg.addSetting(ElasticSearchWriterPipelineElement.ES_DOCUMENT_TYPE, "error");
+		esElementCfg.addSetting(ElasticSearchWriterPipelineElement.ES_HOST_PREFIX + "0", "localhost");
+		esElementCfg.addSetting(ElasticSearchWriterPipelineElement.ES_PORT_PREFIX + "0", "9300");
+		esElementCfg.addSetting(ElasticSearchWriterPipelineElement.ES_WRITE_EVENT_ONLY, "true");
+		
+		PipelineElementConfiguration scriptElementCfg = new PipelineElementConfiguration("wt-pipe", "script-eval", "Script evaluator", ScriptEvaluatorPipelineElement.class.getName(), 1);
+		scriptElementCfg.addSetting(ScriptEvaluatorPipelineElement.CONFIG_SCRIPT_ENGINE_NAME, "JavaScript");
+		scriptElementCfg.addSetting(ScriptEvaluatorPipelineElement.CONFIG_SCRIPT_INIT_CODE_PREFIX + "0", "spahql");
+		scriptElementCfg.addSetting(ScriptEvaluatorPipelineElement.CONFIG_SCRIPT_EVAL_CODE, "eval-script");
+		scriptElementCfg.addSetting(ScriptEvaluatorPipelineElement.CONFIG_SCRIPT_INPUT_VARIABLE, "eventContent");
+		scriptElementCfg.addSetting(ScriptEvaluatorPipelineElement.CONFIG_SCRIPT_OUTPUT_NEXT_ELEMENT_VARIABLE, "nextElement");
+		scriptElementCfg.addSetting(ScriptEvaluatorPipelineElement.CONFIG_SCRIPT_DEFAULT_DESTINATION_ELEMENT_ID, "es-writer");
+		
+		PipelineRootConfiguration pipelineCfg = new PipelineRootConfiguration("wt-pipe", "webtrends event analyzer pipeline", scriptElementCfg.getElementId());
+		pipelineCfg.addElementConfiguration(esElementCfg);
+		pipelineCfg.addElementConfiguration(scriptElementCfg);
+
+		///////////////////// DISPATCHER
+		DispatchPolicyConfiguration policyCfg = new DispatchPolicyConfiguration("broadcast-dispatch-policy", BroadcastDispatchPolicy.class.getName());
+		policyCfg.addSetting(BroadcastDispatchPolicy.BROADCAST_DESTINATION_PREFIX + "0", "wt-pipe");
+		StreamEventMessageDispatcherConfiguration dispatcherConfiguration = new StreamEventMessageDispatcherConfiguration("root-disp", "disp-1", "dispatcher #1", policyCfg);
+		
+		///////////////////// STREAM ANALYZER CONFIG  
+		StreamAnalyzerServerConfiguration root = new StreamAnalyzerServerConfiguration();
+		root.addListener(streamListenerCfg);
+		root.addDispatcher(dispatcherConfiguration);
+		root.addPipeline(pipelineCfg);
+		
 		ObjectMapper m = new ObjectMapper();
-		System.out.println(m.writeValueAsString(configuration));
+		System.out.println(m.writeValueAsString(root));
 		
 		
 	}
