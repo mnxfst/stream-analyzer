@@ -15,6 +15,7 @@
  */
 package com.mnxfst.stream.pipeline;
 
+import com.mnxfst.stream.message.StreamEventMessage;
 import com.mnxfst.stream.pipeline.config.PipelineElementConfiguration;
 
 /**
@@ -24,21 +25,32 @@ import com.mnxfst.stream.pipeline.config.PipelineElementConfiguration;
  */
 public class TestPipelineElement extends PipelineElement {
 
+	private String logRefPath = null;
+	
 	public TestPipelineElement(PipelineElementConfiguration pipelineElementConfiguration) {
 		super(pipelineElementConfiguration);
-	}
-
-	/**
-	 * @see akka.actor.UntypedActor#onReceive(java.lang.Object)
-	 */	
-	public void onReceive(Object message) throws Exception {
-		getSender().tell(message, getSelf());
+		logRefPath = pipelineElementConfiguration.getSettings().get("logRefPath");
 	}
 
 	/**
 	 * @see akka.actor.UntypedActor#postStop()
 	 */
 	public void postStop() throws Exception {		
+	}
+
+	/**
+	 * @see com.mnxfst.stream.pipeline.PipelineElement#onReceive(java.lang.Object)
+	 */
+	public void onReceive(Object message) throws Exception {
+		System.out.println("Message: " + message + " to " + context().actorSelection(logRefPath));
+		context().actorSelection(logRefPath).tell(message, getSelf());
+	}
+
+	/**
+	 * @see com.mnxfst.stream.pipeline.PipelineElement#processEvent(com.mnxfst.stream.message.StreamEventMessage)
+	 */
+	protected void processEvent(StreamEventMessage message) throws Exception {
+		//
 	}
 
 }

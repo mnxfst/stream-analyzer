@@ -19,58 +19,45 @@ import java.io.Serializable;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
-import com.mnxfst.stream.pipeline.PipelineElement;
+import com.mnxfst.stream.pipeline.PipelineRoot;
 
 /**
- * Indicates that the initialization of a {@link PipelineElement pipeline element} failed for some reason
+ * Reports an unknown next element towards the {@link PipelineRoot pipeline root}
  * @author mnxfst
- * @since 04.03.2014
+ * @since 05.03.2014
  *
  */
-@JsonRootName ( value = "pipelineElementSetupFailedMessage" )
-public class PipelineElementSetupFailedMessage implements Serializable {
+@JsonRootName ( value = "pipelineUnknownElementMessage" )
+public class PipelineElementReferenceUnknownMessage implements Serializable {
 
-	private static final long serialVersionUID = 9163817849616828660L;
+	private static final long serialVersionUID = -209285184846457219L;
 	
-	public static final int GENERAL = 1;
-	public static final int CLASS_NOT_FOUND = 2;
-	public static final int NON_UNIQUE_ELEMENT_ID = 3;
-	public static final int INITIAL_MESSAGE_RECEIVER_NOT_FOUND = 4;
-	
-	/** reference towards pipeline the error belongs to */
+	/** identifier of pipeline the reporting element belongs to */  
 	@JsonProperty ( value = "pipelineId", required = true )
 	private String pipelineId;
-
-	/** identifier of failed element */
+	/** identifier of reporting element */
 	@JsonProperty ( value = "elementId", required = true )
 	private String elementId;
-	
-	/** error code */
-	@JsonProperty ( value = "error", required = true )
-	private int error = 0;
-	
-	/** error message */
-	@JsonProperty ( value = "message", required = true )
-	private String message;
+	/** missing element identifier */
+	@JsonProperty ( value = "unknownElementId", required = true )
+	private String unknownElementId;
 	
 	/**
 	 * Default constructor
 	 */
-	public PipelineElementSetupFailedMessage() {		
+	public PipelineElementReferenceUnknownMessage() {		
 	}
 	
 	/**
 	 * Initializes the message using the provided input
 	 * @param pipelineId
 	 * @param elementId
-	 * @param error
-	 * @param message
+	 * @param unknownElementId
 	 */
-	public PipelineElementSetupFailedMessage(final String pipelineId, final String elementId, final int error, final String message) {
+	public PipelineElementReferenceUnknownMessage(final String pipelineId, final String elementId, final String unknownElementId) {
 		this.pipelineId = pipelineId;
 		this.elementId = elementId;
-		this.error = error;
-		this.message = message;
+		this.unknownElementId = unknownElementId;
 	}
 
 	public String getPipelineId() {
@@ -89,20 +76,12 @@ public class PipelineElementSetupFailedMessage implements Serializable {
 		this.elementId = elementId;
 	}
 
-	public int getError() {
-		return error;
+	public String getUnknownElementId() {
+		return unknownElementId;
 	}
 
-	public void setError(int error) {
-		this.error = error;
-	}
-
-	public String getMessage() {
-		return message;
-	}
-
-	public void setMessage(String message) {
-		this.message = message;
+	public void setUnknownElementId(String unknownElementId) {
+		this.unknownElementId = unknownElementId;
 	}
 	
 	

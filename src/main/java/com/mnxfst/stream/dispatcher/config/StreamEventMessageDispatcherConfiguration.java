@@ -30,7 +30,7 @@ import com.mnxfst.stream.dispatcher.StreamEventMessageDispatcher;
  *
  */
 @JsonRootName ( value = "dispatcherConfiguration" )
-public class StreamEventMessageDispatcherConfiguraton implements Serializable {
+public class StreamEventMessageDispatcherConfiguration implements Serializable {
 
 	private static final long serialVersionUID = 5180913580358704014L;
 	
@@ -53,7 +53,7 @@ public class StreamEventMessageDispatcherConfiguraton implements Serializable {
 	/**
 	 * Default constructor
 	 */
-	public StreamEventMessageDispatcherConfiguraton() {		
+	public StreamEventMessageDispatcherConfiguration() {		
 	}
 	
 	/**
@@ -63,7 +63,7 @@ public class StreamEventMessageDispatcherConfiguraton implements Serializable {
 	 * @param description
 	 * @param dispatchPolicy
 	 */
-	public StreamEventMessageDispatcherConfiguraton(final String id, final String name, final String description, final DispatchPolicyConfiguration dispatchPolicy) {
+	public StreamEventMessageDispatcherConfiguration(final String id, final String name, final String description, final DispatchPolicyConfiguration dispatchPolicy) {
 		this.id = id;
 		this.name = name;
 		this.description = description;

@@ -30,7 +30,7 @@ import com.mnxfst.stream.directory.message.ComponentLookupResponseMessage;
 import com.mnxfst.stream.directory.message.ComponentRegistrationMessage;
 import com.mnxfst.stream.directory.message.ComponentRegistrationResponseMessage;
 import com.mnxfst.stream.dispatcher.config.DispatchPolicyConfiguration;
-import com.mnxfst.stream.dispatcher.config.StreamEventMessageDispatcherConfiguraton;
+import com.mnxfst.stream.dispatcher.config.StreamEventMessageDispatcherConfiguration;
 import com.mnxfst.stream.message.StreamEventMessage;
 
 /**
@@ -42,7 +42,7 @@ import com.mnxfst.stream.message.StreamEventMessage;
 public class StreamEventMessageDispatcher extends UntypedActor {
 
 	/** dispatcher configuration */
-	private final StreamEventMessageDispatcherConfiguraton dispatcherConfiguration;
+	private final StreamEventMessageDispatcherConfiguration dispatcherConfiguration;
 	/** dispatch policy */
 	private DispatchPolicy dispatchPolicy;
 	/** holds all destinations */
@@ -55,7 +55,7 @@ public class StreamEventMessageDispatcher extends UntypedActor {
 	 * @param dispatcherConfiguration
 	 * @param componentRegistryRef
 	 */
-	public StreamEventMessageDispatcher(final StreamEventMessageDispatcherConfiguraton dispatcherConfiguration, final ActorRef componentRegistryRef) {
+	public StreamEventMessageDispatcher(final StreamEventMessageDispatcherConfiguration dispatcherConfiguration, final ActorRef componentRegistryRef) {
 		this.dispatcherConfiguration = dispatcherConfiguration;
 		this.componentRegistryRef = componentRegistryRef;
 	}

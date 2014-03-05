@@ -29,10 +29,13 @@ import akka.actor.Props;
 import akka.testkit.JavaTestKit;
 import akka.testkit.TestActorRef;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mnxfst.stream.directory.message.ComponentLookupMessage;
 import com.mnxfst.stream.directory.message.ComponentLookupResponseMessage;
 import com.mnxfst.stream.directory.message.ComponentRegistrationMessage;
 import com.mnxfst.stream.directory.message.ComponentRegistrationResponseMessage;
+import com.mnxfst.stream.listener.StreamEventListenerConfiguration;
+import com.mnxfst.stream.listener.webtrends.WebtrendsStreamListener;
 
 /**
  * Test case for {@link ComponentRegistry component registry}
@@ -176,4 +179,25 @@ public class ComponentRegistryTest {
 			
 		};
 	}
+	
+	@Test
+	public void test() throws Exception {
+		
+		StreamEventListenerConfiguration configuration = new StreamEventListenerConfiguration(WebtrendsStreamListener.class.getName(), "wt-listener-1", "wt-listener-1", "wt-listener-1", "0.1");		
+		configuration.getSettings().put(WebtrendsStreamListener.WT_CONFIG_AUTH_AUDIENCE, "auth-audience");
+		configuration.getSettings().put(WebtrendsStreamListener.WT_CONFIG_AUTH_SCOPE, "auth-scope");
+		configuration.getSettings().put(WebtrendsStreamListener.WT_CONFIG_AUTH_URL, "auth-url");
+		configuration.getSettings().put(WebtrendsStreamListener.WT_CONFIG_EVENT_STREAM_URL, "stream-url");
+		configuration.getSettings().put(WebtrendsStreamListener.WT_CONFIG_CLIENT_ID, "client-id");
+		configuration.getSettings().put(WebtrendsStreamListener.WT_CONFIG_CLIENT_SECRET, "client-secret");
+		configuration.getSettings().put(WebtrendsStreamListener.WT_CONFIG_STREAM_TYPE, "stream-type");
+		configuration.getSettings().put(WebtrendsStreamListener.WT_CONFIG_STREAM_QUERY, "stream-query");
+		configuration.getSettings().put(WebtrendsStreamListener.WT_CONFIG_STREAM_VERSION, "stream-version");
+		configuration.getSettings().put(WebtrendsStreamListener.WT_CONFIG_SCHEMA_VERSION, "schema-version");
+		ObjectMapper m = new ObjectMapper();
+		System.out.println(m.writeValueAsString(configuration));
+		
+		
+	}
+	
 }

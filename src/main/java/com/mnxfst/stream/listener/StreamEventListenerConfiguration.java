@@ -16,12 +16,15 @@
 package com.mnxfst.stream.listener;
 
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonRootName;
 
 /**
  * Common base for all {@link StreamEventListener event listener configurations}
@@ -29,10 +32,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * @since 28.02.2014
  *
  */
-public abstract class StreamEventListenerConfiguration implements Serializable {
+@JsonRootName ( value = "streamEventListenerConfiguration" )
+public class StreamEventListenerConfiguration implements Serializable {
 
 	private static final long serialVersionUID = -6549690615195743137L;
 
+	@JsonProperty ( value = "listenerClass", required = true )
+	private String listenerClass = null;
+	
 	@JsonProperty ( value = "id", required = true )
 	private String id = null;
 	
@@ -48,6 +55,9 @@ public abstract class StreamEventListenerConfiguration implements Serializable {
 	@JsonProperty ( value = "dispatchers", required = true )
 	private Set<String> dispatchers = new HashSet<>();
 	
+	@JsonProperty ( value = "settings", required = true ) 
+	private Map<String, String> settings = new HashMap<>();
+	
 	/**
 	 * Default constructor - quite obvious, eh ;-)
 	 */
@@ -56,12 +66,14 @@ public abstract class StreamEventListenerConfiguration implements Serializable {
 	
 	/**
 	 * Initializes the configuration using the provided input
+	 * @param listenerClass
 	 * @param id
 	 * @param name
 	 * @param description
 	 * @param version
 	 */
-	public StreamEventListenerConfiguration(final String id, final String name, final String description, final String version) {
+	public StreamEventListenerConfiguration(final String listenerClass, final String id, final String name, final String description, final String version) {
+		this.listenerClass = listenerClass;
 		this.id = id;
 		this.name = name;
 		this.description = description;
@@ -77,6 +89,23 @@ public abstract class StreamEventListenerConfiguration implements Serializable {
 			this.dispatchers.add(dispatcherId);
 	}
 	
+	/**
+	 * Adds a new setting
+	 * @param key
+	 * @param value
+	 */
+	public void addSetting(final String key, final String value) {
+		this.settings.put(key, value);
+	}
+	
+	public String getListenerClass() {
+		return listenerClass;
+	}
+
+	public void setListenerClass(String listenerClass) {
+		this.listenerClass = listenerClass;
+	}
+
 	public String getId() {
 		return id;
 	}
@@ -115,6 +144,14 @@ public abstract class StreamEventListenerConfiguration implements Serializable {
 
 	public void setDispatchers(Set<String> dispatchers) {
 		this.dispatchers = dispatchers;
+	}
+
+	public Map<String, String> getSettings() {
+		return settings;
+	}
+
+	public void setSettings(Map<String, String> settings) {
+		this.settings = settings;
 	}
 	 
 	

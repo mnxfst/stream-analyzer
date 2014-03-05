@@ -23,7 +23,7 @@ import com.mnxfst.stream.listener.StreamEventListenerConfiguration;
  * Required settings for initializing the {@link WebtrendsStreamListener webtrends stream} listener
  * @author mnxfst
  * @since 28.02.2014
- *
+ * @deprecated use {@link StreamEventListenerConfiguration}
  */
 @JsonRootName ( value = "webtrendsStreamListener" )
 public class WebtrendsStreamListenerConfiguration extends StreamEventListenerConfiguration {
@@ -96,7 +96,7 @@ public class WebtrendsStreamListenerConfiguration extends StreamEventListenerCon
 	public WebtrendsStreamListenerConfiguration(final String id, final String name, final String description, final String version, 
 			final String authUrl, final String authScope, final String authAudience, final String eventStreamUrl, final String clientId, 
 			final String clientSecret, final String streamType, final String streamQuery, final String streamVersion, final String schemaVersion) {
-		super(id, name, description, version);
+		
 		this.authUrl = authUrl;
 		this.authScope = authScope;
 		this.authAudience = authAudience;

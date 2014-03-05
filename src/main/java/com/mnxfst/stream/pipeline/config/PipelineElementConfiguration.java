@@ -33,8 +33,12 @@ public class PipelineElementConfiguration implements Serializable {
 
 	private static final long serialVersionUID = -4343068515242697150L;
 
+	/** identifier of pipeline the element belongs to */
+	@JsonProperty ( value = "pipelineId" )
+	private String pipelineId;
+	
 	/** element identifier which must be unique per pipeline */
-	@JsonProperty ( value = "id", required = true )
+	@JsonProperty ( value = "elementId", required = true )
 	private String elementId;
 	
 	/** element description */
@@ -51,7 +55,7 @@ public class PipelineElementConfiguration implements Serializable {
 	
 	/** settings */
 	@JsonProperty ( value = "settings", required = true)
-	private Map<String, Serializable> settings = new HashMap<>();
+	private Map<String, String> settings = new HashMap<>();
 
 	/**
 	 * Default constructor
@@ -61,12 +65,14 @@ public class PipelineElementConfiguration implements Serializable {
 	
 	/**
 	 * Initializes the constructor using the provided input
+	 * @param pipelineId
 	 * @param elementId
 	 * @param description
 	 * @param elementClass
 	 * @param numOfInstances
 	 */
-	public PipelineElementConfiguration(final String elementId, final String description, final String elementClass, final int numOfInstances) {
+	public PipelineElementConfiguration(final String pipelineId, final String elementId, final String description, final String elementClass, final int numOfInstances) {
+		this.pipelineId = pipelineId;
 		this.elementId = elementId;
 		this.description = description;
 		this.elementClass = elementClass;
@@ -80,6 +86,14 @@ public class PipelineElementConfiguration implements Serializable {
 	 */
 	public void addSetting(final String key, final String value) {
 		this.settings.put(key, value);
+	}
+
+	public String getPipelineId() {
+		return pipelineId;
+	}
+
+	public void setPipelineId(String pipelineId) {
+		this.pipelineId = pipelineId;
 	}
 
 	public String getElementId() {
@@ -106,11 +120,11 @@ public class PipelineElementConfiguration implements Serializable {
 		this.elementClass = elementClass;
 	}
 
-	public Map<String, Serializable> getSettings() {
+	public Map<String, String> getSettings() {
 		return settings;
 	}
 
-	public void setSettings(Map<String, Serializable> settings) {
+	public void setSettings(Map<String, String> settings) {
 		this.settings = settings;
 	}
 

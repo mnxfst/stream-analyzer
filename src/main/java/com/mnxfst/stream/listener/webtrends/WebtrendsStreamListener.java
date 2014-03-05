@@ -25,6 +25,7 @@ import org.eclipse.jetty.websocket.client.WebSocketClient;
 import akka.actor.ActorRef;
 
 import com.mnxfst.stream.listener.StreamEventListener;
+import com.mnxfst.stream.listener.StreamEventListenerConfiguration;
 
 /**
  * Listens to {@link http://www.webtrends.com webtrends} stream api and emits events into analyzer
@@ -34,7 +35,29 @@ import com.mnxfst.stream.listener.StreamEventListener;
  */
 public class WebtrendsStreamListener implements StreamEventListener {
 
-	private final WebtrendsStreamListenerConfiguration configuration;
+	public static final String WT_CONFIG_AUTH_AUDIENCE = "wt.authAudience";
+	public static final String WT_CONFIG_AUTH_SCOPE = "wt.authScope";
+	public static final String WT_CONFIG_AUTH_URL = "wt.authUrl";
+	public static final String WT_CONFIG_EVENT_STREAM_URL = "wt.eventStreamUrl";
+	public static final String WT_CONFIG_CLIENT_ID = "wt.clientId";
+	public static final String WT_CONFIG_CLIENT_SECRET = "wt.clientSecret";
+	public static final String WT_CONFIG_STREAM_TYPE = "wt.streamType";
+	public static final String WT_CONFIG_STREAM_QUERY = "wt.streamQuery";
+	public static final String WT_CONFIG_STREAM_VERSION = "wt.streamVersion";
+	public static final String WT_CONFIG_SCHEMA_VERSION = "wt.schemaVersion";
+	
+	private final StreamEventListenerConfiguration configuration;
+
+	public String authAudience;
+    public String authScope = "sapi.webtrends.com";
+    public String authUrl = "https://sauth.webtrends.com/v1/token";
+	private String eventStreamUrl;
+	private String clientId;
+	private String clientSecret;
+	private String streamType;
+	private String streamQuery;
+	private String streamVersion;
+	private String schemaVersion;
 	
 	private WebSocketClient webtrendsStreamSocketClient;
 	private boolean isRunning = false;
@@ -43,8 +66,19 @@ public class WebtrendsStreamListener implements StreamEventListener {
 	 * Initializes the listener instance using the provided configuration
 	 * @param configuration
 	 */
-	public WebtrendsStreamListener(final WebtrendsStreamListenerConfiguration configuration) {
+	public WebtrendsStreamListener(final StreamEventListenerConfiguration configuration) {
 		this.configuration = configuration;
+		
+		this.authAudience = configuration.getSettings().get(WT_CONFIG_AUTH_AUDIENCE);
+		this.authScope = configuration.getSettings().get(WT_CONFIG_AUTH_SCOPE);
+		this.authUrl = configuration.getSettings().get(WT_CONFIG_AUTH_URL);
+		this.eventStreamUrl = configuration.getSettings().get(WT_CONFIG_EVENT_STREAM_URL);
+		this.clientId = configuration.getSettings().get(WT_CONFIG_CLIENT_ID);
+		this.clientSecret = configuration.getSettings().get(WT_CONFIG_CLIENT_SECRET);
+		this.streamType = configuration.getSettings().get(WT_CONFIG_STREAM_TYPE);
+		this.streamQuery = configuration.getSettings().get(WT_CONFIG_STREAM_QUERY);
+		this.streamVersion = configuration.getSettings().get(WT_CONFIG_STREAM_VERSION);
+		this.schemaVersion = configuration.getSettings().get(WT_CONFIG_SCHEMA_VERSION);		
 	}
 	
 	/**
@@ -54,8 +88,8 @@ public class WebtrendsStreamListener implements StreamEventListener {
 
 		String oAuthToken = null;
 		try {
-			oAuthToken = new WebtrendsTokenRequest(configuration.getAuthUrl(), configuration.getAuthAudience(), configuration.getAuthScope(), 
-					configuration.getClientId(), configuration.getClientSecret()).execute();
+			oAuthToken = new WebtrendsTokenRequest(this.authUrl, this.authAudience, this.authScope, 
+					this.clientId, this.clientSecret).execute();
 		} catch(Exception e) {
 			throw new RuntimeException("Failed to request webtrends token. Error: " + e.getMessage(), e);
 		}
@@ -63,13 +97,13 @@ public class WebtrendsStreamListener implements StreamEventListener {
 		// TODO dispatchers
 		Set<ActorRef> dispatcherRefs = null;
 		this.webtrendsStreamSocketClient = new WebSocketClient();
-		WebtrendsStreamSocket socket = new WebtrendsStreamSocket(oAuthToken, this.configuration.getStreamType(), this.configuration.getStreamQuery(),
-				this.configuration.getStreamVersion(), this.configuration.getSchemaVersion(), dispatcherRefs);
+		WebtrendsStreamSocket socket = new WebtrendsStreamSocket(oAuthToken, this.streamType, this.streamQuery,
+				this.streamVersion, this.schemaVersion, dispatcherRefs);
 
 		try {
 			this.webtrendsStreamSocketClient.start();
 			ClientUpgradeRequest upgradeRequest = new ClientUpgradeRequest();
-			this.webtrendsStreamSocketClient.connect(socket, new URI(this.configuration.getEventStreamUrl()), upgradeRequest);
+			this.webtrendsStreamSocketClient.connect(socket, new URI(this.eventStreamUrl), upgradeRequest);
 			socket.await(5, TimeUnit.SECONDS);
 		} catch(Exception e) {
 			throw new RuntimeException("Unable to connect to web socket: " + e.getMessage(), e);

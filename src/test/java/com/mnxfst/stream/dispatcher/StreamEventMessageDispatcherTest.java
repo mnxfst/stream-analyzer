@@ -34,7 +34,7 @@ import com.mnxfst.stream.directory.ComponentType;
 import com.mnxfst.stream.directory.message.ComponentLookupMessage;
 import com.mnxfst.stream.directory.message.ComponentRegistrationMessage;
 import com.mnxfst.stream.dispatcher.config.DispatchPolicyConfiguration;
-import com.mnxfst.stream.dispatcher.config.StreamEventMessageDispatcherConfiguraton;
+import com.mnxfst.stream.dispatcher.config.StreamEventMessageDispatcherConfiguration;
 import com.mnxfst.stream.message.StreamEventMessage;
 
 /**
@@ -66,7 +66,7 @@ protected static ActorSystem system;
 	public void testGetDispatchPolicyWithValidInput() throws Exception {
 
 		DispatchPolicyConfiguration dispatchPolicyCfg = new DispatchPolicyConfiguration("policy-1", TestDispatcher.class.getName());
-		StreamEventMessageDispatcherConfiguraton cfg = new StreamEventMessageDispatcherConfiguraton("disp-id-1", "disp-1", "test description", dispatchPolicyCfg);		
+		StreamEventMessageDispatcherConfiguration cfg = new StreamEventMessageDispatcherConfiguration("disp-id-1", "disp-1", "test description", dispatchPolicyCfg);		
 
 		TestActorRef<ComponentRegistry> componentRegistryRef = TestActorRef.create(system, Props.create(ComponentRegistry.class), "testGetDispatchPolicyWithValidInput");
 		
@@ -87,7 +87,7 @@ protected static ActorSystem system;
 	public void testDispatcherInitializationValidateComponentRegistration() {
 		
 		final DispatchPolicyConfiguration dispatchPolicyCfg = new DispatchPolicyConfiguration("policy-1", TestDispatcher.class.getName());
-		final StreamEventMessageDispatcherConfiguraton cfg = new StreamEventMessageDispatcherConfiguraton("testDispatcherInitializationValidateComponentRegistration", "disp-1", "test description", dispatchPolicyCfg);		
+		final StreamEventMessageDispatcherConfiguration cfg = new StreamEventMessageDispatcherConfiguration("testDispatcherInitializationValidateComponentRegistration", "disp-1", "test description", dispatchPolicyCfg);		
 
 		new JavaTestKit(system) { {
 			
@@ -108,7 +108,7 @@ protected static ActorSystem system;
 	public void testDispatcherInitializationValidateComponentRegistrationWithLookupMessages() {
 		
 		final DispatchPolicyConfiguration dispatchPolicyCfg = new DispatchPolicyConfiguration("policy-1", TestDispatcher.class.getName());
-		final StreamEventMessageDispatcherConfiguraton cfg = new StreamEventMessageDispatcherConfiguraton("testDispatcherInitializationValidateComponentRegistrationWithLookupMessages", "disp-1", "test description", dispatchPolicyCfg);
+		final StreamEventMessageDispatcherConfiguration cfg = new StreamEventMessageDispatcherConfiguration("testDispatcherInitializationValidateComponentRegistrationWithLookupMessages", "disp-1", "test description", dispatchPolicyCfg);
 		cfg.addDestination("test-destination-1");
 		cfg.addDestination("test-destination-2");
 
@@ -140,7 +140,7 @@ protected static ActorSystem system;
 		final DispatchPolicyConfiguration dispatchPolicyCfg = new DispatchPolicyConfiguration("policy-1", TestDispatcher.class.getName());
 		dispatchPolicyCfg.addSetting("test-destination-1", null);
 		
-		final StreamEventMessageDispatcherConfiguraton cfg = new StreamEventMessageDispatcherConfiguraton("testDispatcherWithValidSetupAndStreamEventMessage", "disp-1", "test description", dispatchPolicyCfg);
+		final StreamEventMessageDispatcherConfiguration cfg = new StreamEventMessageDispatcherConfiguration("testDispatcherWithValidSetupAndStreamEventMessage", "disp-1", "test description", dispatchPolicyCfg);
 		cfg.addDestination("test-destination-1");
 		cfg.addDestination("test-destination-2");
 		cfg.addDestination("test-destination-3");

@@ -16,6 +16,8 @@
 package com.mnxfst.stream.message;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
@@ -30,7 +32,7 @@ import com.fasterxml.jackson.annotation.JsonRootName;
  * @since 28.02.2014
  *
  */
-@JsonRootName ( value = "event" )
+@JsonRootName ( value = "streamEvent" )
 public class StreamEventMessage implements Serializable {
 
 	private static final long serialVersionUID = -5771490648930073652L;
@@ -46,7 +48,10 @@ public class StreamEventMessage implements Serializable {
 	private String timestamp;
 	/** content */
 	@JsonProperty ( value = "event", required = true )
-	private Serializable event;
+	private String event;
+	/** custom attributes */
+	@JsonProperty ( value = "customAttributes" )
+	private Map<String, String> customAttributes = new HashMap<>();
 	
 	/**
 	 * Default constructor
@@ -61,13 +66,22 @@ public class StreamEventMessage implements Serializable {
 	 * @param timestamp
 	 * @param event
 	 */
-	public StreamEventMessage(final String identifier, final String origin, final String timestamp, final Serializable event) {
+	public StreamEventMessage(final String identifier, final String origin, final String timestamp, final String event) {
 		this.identifier = identifier;
 		this.origin = origin;
 		this.timestamp = timestamp;
 		this.event = event;
 	}
 
+	/**
+	 * Adds a new custom attribute to the message
+	 * @param key
+	 * @param value
+	 */
+	public void addCustomAttribute(final String key, final String value) {
+		this.customAttributes.put(key, value);
+	}
+	
 	public String getIdentifier() {
 		return identifier;
 	}
@@ -92,12 +106,20 @@ public class StreamEventMessage implements Serializable {
 		this.timestamp = timestamp;
 	}
 
-	public Serializable getEvent() {
+	public String getEvent() {
 		return event;
 	}
 
-	public void setEvent(Serializable event) {
+	public void setEvent(String event) {
 		this.event = event;
+	}
+
+	public Map<String, String> getCustomAttributes() {
+		return customAttributes;
+	}
+
+	public void setCustomAttributes(Map<String, String> customAttributes) {
+		this.customAttributes = customAttributes;
 	}
 
 }

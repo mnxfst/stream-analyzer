@@ -42,6 +42,10 @@ public class PipelineRootConfiguration implements Serializable {
 	@JsonProperty ( value = "description", required = true )
 	private String description;
 	
+	/** identifier of initial message receiving element */
+	@JsonProperty ( value = "initialReceiverId", required = true )
+	private String initialReceiverId;
+	
 	/** pipeline element configurations required for setting up the pipeline */
 	@JsonProperty ( value = "elements", required = true )
 	private Set<PipelineElementConfiguration> elements = new HashSet<>();
@@ -57,9 +61,10 @@ public class PipelineRootConfiguration implements Serializable {
 	 * @param pipelineId
 	 * @param description
 	 */
-	public PipelineRootConfiguration(final String pipelineId, final String description) {
+	public PipelineRootConfiguration(final String pipelineId, final String description, final String initialReceiverId) {
 		this.pipelineId = pipelineId;
 		this.description = description;		
+		this.initialReceiverId = initialReceiverId;
 	}
 	
 	/**
@@ -92,6 +97,14 @@ public class PipelineRootConfiguration implements Serializable {
 
 	public void setElements(Set<PipelineElementConfiguration> elements) {
 		this.elements = elements;
+	}
+
+	public String getInitialReceiverId() {
+		return initialReceiverId;
+	}
+
+	public void setInitialReceiverId(String initialReceiverId) {
+		this.initialReceiverId = initialReceiverId;
 	}
 	
 	

@@ -29,6 +29,8 @@ import akka.actor.UntypedActor;
 import com.mnxfst.stream.message.StreamEventMessage;
 import com.mnxfst.stream.pipeline.config.PipelineElementConfiguration;
 import com.mnxfst.stream.pipeline.config.PipelineRootConfiguration;
+import com.mnxfst.stream.pipeline.message.PipelineElementReferenceUnknownMessage;
+import com.mnxfst.stream.pipeline.message.PipelineElementReferenceUpdateMessage;
 import com.mnxfst.stream.pipeline.message.PipelineElementSetupFailedMessage;
 import com.mnxfst.stream.pipeline.message.PipelineRootInitializedMessage;
 import com.mnxfst.stream.pipeline.message.PipelineShutdownMessage;
@@ -43,19 +45,22 @@ public class PipelineRoot extends UntypedActor {
 
 	private final PipelineRootConfiguration pipelineConfiguration;
 	private final Map<String, ActorRef> pipelineElements = new HashMap<>();
+	private ActorRef initialMessageReceiverRef;
 	
 	/**
 	 * Initializes the root using the provided input
 	 * @param pipelineConfiguration
 	 */
 	public PipelineRoot(final PipelineRootConfiguration pipelineConfiguration) {
-		if(pipelineConfiguration == null)
-			throw new RuntimeException("Missing required root configuration");
 		
+		/////////////////////////////////////////////////////////////////////////////////////////////////
+		// ensure that the provided configuration contains any values
+		if(pipelineConfiguration == null)
+			throw new RuntimeException("Missing required root configuration");		
 		if(StringUtils.isBlank(pipelineConfiguration.getPipelineId()))
 			throw new RuntimeException("Missing required pipeline identifier");
 		if(pipelineConfiguration.getElements() == null || pipelineConfiguration.getElements().isEmpty())
-			throw new RuntimeException("Missing required pipeline element configurations");				
+			throw new RuntimeException("Missing required pipeline element configurations");
 
 		// step through element configurations and validate settings to avoid errors during start
 		for(final PipelineElementConfiguration cfg : pipelineConfiguration.getElements()) {
@@ -64,7 +69,10 @@ public class PipelineRoot extends UntypedActor {
 			if(StringUtils.isBlank(cfg.getElementClass()))
 				throw new RuntimeException("Missing required pipeline element class. Pipeline: " + pipelineConfiguration.getPipelineId());
 		}
-		this.pipelineConfiguration= pipelineConfiguration;
+		//
+		/////////////////////////////////////////////////////////////////////////////////////////////////
+
+		this.pipelineConfiguration = pipelineConfiguration;
 	}
 	
 	/**
@@ -75,9 +83,13 @@ public class PipelineRoot extends UntypedActor {
 		
 		boolean failed = false;
 		String pipelineId = pipelineConfiguration.getPipelineId();
+		
+		PipelineElementReferenceUpdateMessage refUpdateMessage = new PipelineElementReferenceUpdateMessage(pipelineId);
+		
 		// iterate through pipeline element configurations and instantiate a new node for each
 		for(final PipelineElementConfiguration cfg : pipelineConfiguration.getElements()) {			
 
+			// extract required values into variables for faster access ... obviously, ehhh ;-)
 			String elementId = cfg.getElementId();
 			String description = cfg.getDescription();
 			String elementClassName = cfg.getElementClass();
@@ -96,7 +108,12 @@ public class PipelineRoot extends UntypedActor {
 			// initialize element 
 			context().system().log().info("init start [pipeline="+pipelineId+", element="+elementId+", description="+description+", class="+elementClassName+"]");
 			try {
-				this.pipelineElements.put(elementId, context().actorOf(Props.create(Class.forName(elementClassName), cfg), elementId));
+				final ActorRef elementRef = context().actorOf(Props.create(Class.forName(elementClassName), cfg), elementId);
+				this.pipelineElements.put(elementId, elementRef);
+				refUpdateMessage.addElementReference(elementId, elementRef);
+				
+				if(this.initialMessageReceiverRef == null && StringUtils.endsWithIgnoreCase(elementId, pipelineConfiguration.getInitialReceiverId()))
+					this.initialMessageReceiverRef = elementRef;
 			} catch(ClassNotFoundException e) {
 				reportInitError(pipelineId, elementId, elementClassName, PipelineElementSetupFailedMessage.CLASS_NOT_FOUND, "Class not found");
 				failed = true;
@@ -107,12 +124,23 @@ public class PipelineRoot extends UntypedActor {
 				break;
 			}
 			context().system().log().info("init done  [pipeline="+pipelineId+", element="+elementId+", description="+description+", class="+elementClassName+"]");
-		}				
+		}		
+		
+		if(this.initialMessageReceiverRef == null) {
+			reportInitError(pipelineId, pipelineConfiguration.getInitialReceiverId(), "null", PipelineElementSetupFailedMessage.INITIAL_MESSAGE_RECEIVER_NOT_FOUND, "Referenced initial message receiver not found");
+			failed = true;
+		}
+		
 		if(failed)
 			context().system().log().info("init failed [pipeline="+pipelineId+"]");
 		else {
 			context().system().log().info("init done  [pipeline="+pipelineId+", elementCount="+this.pipelineElements.size()+"]");
 			context().parent().tell(new PipelineRootInitializedMessage(pipelineId), getSelf());
+			
+			// notify all children about each other
+			for(final ActorRef pipelineElementRef : this.pipelineElements.values()) {
+				pipelineElementRef.tell(refUpdateMessage, getSelf());
+			}
 		}
 	}
 
@@ -124,11 +152,15 @@ public class PipelineRoot extends UntypedActor {
 	public void onReceive(Object message) throws Exception {
 		
 		if(message instanceof StreamEventMessage) {
-			// TODO
+			this.initialMessageReceiverRef.tell(message, getSelf());
 		} else if(message instanceof PipelineShutdownMessage) {
 			shutdown((PipelineShutdownMessage)message);
 			getSender().tell(new PipelineShutdownMessage(this.pipelineConfiguration.getPipelineId()), getSelf());
-		} 
+		} else if(message instanceof PipelineElementSetupFailedMessage) {
+			context().parent().tell(message, getSender());
+		} else if(message instanceof PipelineElementReferenceUnknownMessage) {
+			getSender().tell(handlePipelineElementReferenceUnknownMessage((PipelineElementReferenceUnknownMessage)message), getSelf());
+		}
 
 	}
 	
@@ -157,6 +189,21 @@ public class PipelineRoot extends UntypedActor {
 		context().system().log().error("Failed to instantiate pipeline element [pipeline="+pipelineId+", element="+elementId+", class="+elementClass+", error="+errorMessage+"]");
 		context().parent().tell(new PipelineElementSetupFailedMessage(
 				pipelineId, elementId, errorCode, "Element class '"+elementClass+"' not found"), getSelf());
+	}
+	
+	/**
+	 * Handles messages of type {@link PipelineElementReferenceUnknownMessage}
+	 * @param msg
+	 */
+	protected PipelineElementReferenceUpdateMessage handlePipelineElementReferenceUnknownMessage(final PipelineElementReferenceUnknownMessage msg) {
+		
+		if(msg != null) {		
+			PipelineElementReferenceUpdateMessage response = new PipelineElementReferenceUpdateMessage(this.pipelineConfiguration.getPipelineId());
+			response.addElementReference(msg.getElementId(), this.pipelineElements.get(msg.getElementId()));
+			return response;
+		}		
+		
+		return null;
 	}
 
 }
