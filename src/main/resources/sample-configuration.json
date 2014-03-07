@@ -1,0 +1,77 @@
+{
+	"listeners":[
+		{
+			"listenerClass":"com.mnxfst.stream.listener.webtrends.WebtrendsStreamListener",
+			"id":"wt-listener-1",
+			"name":"wt-listener-1",
+			"description":"wt-listener-1",
+			"version":"0.1",
+			"dispatchers":["root-disp"],
+			"settings":{
+				"wt.clientId":"client-id",
+				"wt.authAudience":"auth-audience",
+				"wt.schemaVersion":"schema-version",
+				"wt.streamVersion":"stream-version",
+				"wt.streamQuery":"stream-query",
+				"wt.eventStreamUrl":"stream-url",
+				"wt.authScope":"auth-scope",
+				"wt.authUrl":"auth-url",
+				"wt.streamType":"stream-type",
+				"wt.clientSecret":"client-secret"
+			}
+		}
+	],
+	"dispatchers":[
+		{
+			"id":"root-disp",
+			"name":"disp-1",
+			"description":"dispatcher #1",
+			"destinations":["wt-pipe"],
+			"dispatchPolicy": {
+				"name":"broadcast-dispatch-policy",
+				"policyClass":"com.mnxfst.stream.dispatcher.policy.BroadcastDispatchPolicy",
+				"settings":{
+					"broadcast.destination.0":"wt-pipe"
+				}
+			}
+		}
+	],
+	"pipelines":[
+		{
+			"description":"webtrends event analyzer pipeline",
+			"initialReceiverId":"script-eval",
+			"elements":[
+				{
+					"pipelineId":"wt-pipe",
+					"elementId":"script-eval",
+					"description":"Script evaluator",
+					"elementClass":"com.mnxfst.stream.pipeline.element.script.ScriptEvaluatorPipelineElement",
+					"numOfInstances":1,
+					"settings":{
+						"script.destination.default":"es-writer",
+						"script.code.init.0":"spahql",
+						"script.engine.name":"JavaScript",
+						"script.var.output.nextelement":"nextElement",
+						"script.code.eval":"eval-script",
+						"script.var.input":"eventContent"
+					}
+				},
+				{
+					"pipelineId":"wt-pipe",
+					"elementId":"es-writer",
+					"description":"Elastic Search Writer",
+					"elementClass":"com.mnxfst.stream.pipeline.element.es.ElasticSearchWriterPipelineElement",
+					"numOfInstances":1,
+					"settings": {
+						"eswriter.port.0":"9300",
+						"eswriter.cluster.name":"tracker",
+						"eswriter.document.writeEventOnly":"true",
+						"eswriter.host.0":"localhost",
+						"eswriter.document.type":"error"
+					}
+				}
+			],
+			"id":"wt-pipe"
+		}
+	]
+}
