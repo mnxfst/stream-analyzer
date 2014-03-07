@@ -143,6 +143,32 @@
   			<artifactId>jackson-dataformat-yaml</artifactId>
   			<version>2.1.3</version>
 		</dependency>    	
+		
+		<!-- ethernet address based uuid generation -->
+		<dependency>
+			<groupId>com.fasterxml.uuid</groupId>
+			<artifactId>java-uuid-generator</artifactId>
+			<version>3.1.3</version>
+		</dependency>
+
+<!-- yammer libraries required for setting up and operating the server -->
+		<dependency>
+        	<groupId>com.yammer.dropwizard</groupId>
+        	<artifactId>dropwizard-core</artifactId>
+        	<version>0.6.2</version>
+    	</dependency>
+
+		<dependency>
+        	<groupId>com.yammer.dropwizard</groupId>
+        	<artifactId>dropwizard-client</artifactId>
+        	<version>0.6.2</version>
+    	</dependency>
+    	
+        <dependency>
+        	<groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>1.0.7</version>
+		</dependency>    		
 	</dependencies>	  
   
     	<build>

@@ -15,38 +15,28 @@
  */
 package com.mnxfst.stream.server.config;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
+import javax.validation.constraints.NotNull;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonRootName;
-import com.mnxfst.stream.dispatcher.config.StreamEventMessageDispatcherConfiguration;
-import com.mnxfst.stream.listener.StreamEventListenerConfiguration;
-import com.mnxfst.stream.pipeline.config.PipelineRootConfiguration;
+import com.yammer.dropwizard.config.Configuration;
 
 /**
- * Holds all required configuration for setting up the stream analyzer server
+ * Provides all information required for setting up the stream analyzer server component
  * @author mnxfst
- * @since 05.03.2014
+ * @since 06.03.2014
  *
  */
-@JsonRootName ( value = "streamAnalyzerServerConfiguration" )
-public class StreamAnalyzerServerConfiguration implements Serializable {
+public class StreamAnalyzerServerConfiguration extends Configuration {
 
-	private static final long serialVersionUID = 3441450724545429049L;
+	/** references the json file which holds the configuration for a pipeline */
+	@NotNull
+	@JsonProperty ( value = "pipelineConfigurationFile", required = true )
+	private String pipelineConfigurationFile = null;
 	
-	/** listener configurations */
-	@JsonProperty ( value = "listeners", required = true )
-	private List<StreamEventListenerConfiguration> listeners = new ArrayList<>();
-	
-	/** dispatcher configurations */
-	@JsonProperty ( value = "dispatchers", required = true )
-	private List<StreamEventMessageDispatcherConfiguration> dispatchers = new ArrayList<>();
-	
-	/** pipeline configurations */
-	@JsonProperty ( value = "pipelines", required = true )
-	private List<PipelineRootConfiguration> pipelines = new ArrayList<>();
+	/** unique name of actor system to use */
+	@NotNull
+	@JsonProperty ( value = "actorSystemId", required = true )
+	private String actorSystemId = null;
 	
 	/**
 	 * Default constructor
@@ -54,54 +44,21 @@ public class StreamAnalyzerServerConfiguration implements Serializable {
 	public StreamAnalyzerServerConfiguration() {		
 	}
 
-	/**
-	 * Adds a new listener configuration
-	 * @param listenerConfig
-	 */
-	public void addListener(final StreamEventListenerConfiguration listenerConfig) {
-		this.listeners.add(listenerConfig);
+	public String getPipelineConfigurationFile() {
+		return pipelineConfigurationFile;
+	}
+
+	public void setPipelineConfigurationFile(String pipelineConfigurationFile) {
+		this.pipelineConfigurationFile = pipelineConfigurationFile;
+	}
+
+	public String getActorSystemId() {
+		return actorSystemId;
+	}
+
+	public void setActorSystemId(String actorSystemId) {
+		this.actorSystemId = actorSystemId;
 	}
 	
-	/**
-	 * Adds a new dispatcher configuration
-	 * @param dispatcherConfig
-	 */
-	public void addDispatcher(final StreamEventMessageDispatcherConfiguration dispatcherConfig) {
-		this.dispatchers.add(dispatcherConfig);
-	}
-	
-	/**
-	 * Adds a new pipeline configuration
-	 * @param pipelineRootConfig
-	 */
-	public void addPipeline(final PipelineRootConfiguration pipelineRootConfig) {
-		this.pipelines.add(pipelineRootConfig);
-	}
-
-	public List<StreamEventListenerConfiguration> getListeners() {
-		return listeners;
-	}
-
-	public void setListeners(List<StreamEventListenerConfiguration> listeners) {
-		this.listeners = listeners;
-	}
-
-	public List<StreamEventMessageDispatcherConfiguration> getDispatchers() {
-		return dispatchers;
-	}
-
-	public void setDispatchers(
-			List<StreamEventMessageDispatcherConfiguration> dispatchers) {
-		this.dispatchers = dispatchers;
-	}
-
-	public List<PipelineRootConfiguration> getPipelines() {
-		return pipelines;
-	}
-
-	public void setPipelines(List<PipelineRootConfiguration> pipelines) {
-		this.pipelines = pipelines;
-	}
-
 	
 }

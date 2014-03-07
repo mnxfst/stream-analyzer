@@ -30,6 +30,7 @@ import akka.testkit.JavaTestKit;
 import akka.testkit.TestActorRef;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mnxfst.stream.config.StreamAnalyzerConfiguration;
 import com.mnxfst.stream.directory.message.ComponentLookupMessage;
 import com.mnxfst.stream.directory.message.ComponentLookupResponseMessage;
 import com.mnxfst.stream.directory.message.ComponentRegistrationMessage;
@@ -44,7 +45,6 @@ import com.mnxfst.stream.pipeline.config.PipelineElementConfiguration;
 import com.mnxfst.stream.pipeline.config.PipelineRootConfiguration;
 import com.mnxfst.stream.pipeline.element.es.ElasticSearchWriterPipelineElement;
 import com.mnxfst.stream.pipeline.element.script.ScriptEvaluatorPipelineElement;
-import com.mnxfst.stream.server.config.StreamAnalyzerServerConfiguration;
 
 /**
  * Test case for {@link ComponentRegistry component registry}
@@ -232,7 +232,7 @@ public class ComponentRegistryTest {
 		StreamEventMessageDispatcherConfiguration dispatcherConfiguration = new StreamEventMessageDispatcherConfiguration("root-disp", "disp-1", "dispatcher #1", policyCfg);
 		
 		///////////////////// STREAM ANALYZER CONFIG  
-		StreamAnalyzerServerConfiguration root = new StreamAnalyzerServerConfiguration();
+		StreamAnalyzerConfiguration root = new StreamAnalyzerConfiguration();
 		root.addListener(streamListenerCfg);
 		root.addDispatcher(dispatcherConfiguration);
 		root.addPipeline(pipelineCfg);
