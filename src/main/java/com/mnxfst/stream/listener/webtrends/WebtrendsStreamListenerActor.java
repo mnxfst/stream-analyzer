@@ -42,7 +42,7 @@ public class WebtrendsStreamListenerActor extends UntypedActor {
 	private final Set<String> dispatcherIds = new HashSet<>();
 	private final String eventStreamUrl;
 	private final ActorRef componentRegistryRef;
-	 
+	  
 	private final CountDownLatch latch = new CountDownLatch(1);
 	
 	private WebSocketClient webtrendsStreamSocketClient = null;
