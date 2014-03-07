@@ -23,7 +23,6 @@ import java.util.Set;
 
 import akka.actor.ActorRef;
 import akka.actor.UntypedActor;
-import akka.event.EventStream;
 
 import com.mnxfst.stream.directory.ComponentType;
 import com.mnxfst.stream.directory.message.ComponentLookupMessage;
@@ -83,7 +82,9 @@ public class StreamEventMessageDispatcher extends UntypedActor {
 	public void onReceive(Object message) throws Exception {
 		
 		if(message instanceof StreamEventMessage) {
-		
+			if(this.dispatcherConfiguration.getDestinations().size() > this.dispatchDestinations.size())
+				ensurePipelineReferences();
+			
 			// handle messages of type StreamEventMessage by determining their destination and dispatching it to that instance
 			dispatchMessage((StreamEventMessage)message);
 		} else if(message instanceof ComponentRegistrationResponseMessage) {
@@ -104,12 +105,27 @@ public class StreamEventMessageDispatcher extends UntypedActor {
 			
 	}
 	
+	protected void ensurePipelineReferences() {
+		if(this.dispatcherConfiguration.getDestinations().size() > this.dispatchDestinations.size()) {
+			ComponentLookupMessage componentLookup = new ComponentLookupMessage(ComponentType.DISPATCHER);
+			for(String did : this.dispatcherConfiguration.getDestinations()) {
+				if(!this.dispatchDestinations.containsKey(did)) {
+					componentLookup.addComponentId(did);
+				}
+			}
+			if(!componentLookup.getComponentIds().isEmpty()) {
+				this.componentRegistryRef.tell(componentLookup, getSelf());
+				context().system().log().info("Component lookup issued by dispatcher '"+dispatcherConfiguration.getId()+"' as still pipeline references are missing [destIds="+this.dispatcherConfiguration.getDestinations().size()+", dispRefs="+this.dispatchDestinations.size()+"]");
+			}
+		}
+	}
+	
 	/**
 	 * Dispatches the provided message 
 	 * @param destinations
 	 */
 	protected void dispatchMessage(StreamEventMessage message) {
-				
+		
 		// ensure that only "non-null" messages are processed
 		if(message != null) {
 			// determine the destinations according to the configured dispatch policy

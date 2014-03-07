@@ -15,10 +15,7 @@
  */
 package com.mnxfst.stream.server.config;
 
-import javax.validation.constraints.NotNull;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.yammer.dropwizard.config.Configuration;
 
 /**
  * Provides all information required for setting up the stream analyzer server component
@@ -26,15 +23,13 @@ import com.yammer.dropwizard.config.Configuration;
  * @since 06.03.2014
  *
  */
-public class StreamAnalyzerServerConfiguration extends Configuration {
+public class StreamAnalyzerServerConfiguration {
 
 	/** references the json file which holds the configuration for a pipeline */
-	@NotNull
 	@JsonProperty ( value = "pipelineConfigurationFile", required = true )
 	private String pipelineConfigurationFile = null;
 	
 	/** unique name of actor system to use */
-	@NotNull
 	@JsonProperty ( value = "actorSystemId", required = true )
 	private String actorSystemId = null;
 	
