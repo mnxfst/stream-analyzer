@@ -39,8 +39,7 @@ import com.mnxfst.stream.dispatcher.config.DispatchPolicyConfiguration;
 import com.mnxfst.stream.dispatcher.config.StreamEventMessageDispatcherConfiguration;
 import com.mnxfst.stream.dispatcher.policy.BroadcastDispatchPolicy;
 import com.mnxfst.stream.listener.StreamEventListenerConfiguration;
-import com.mnxfst.stream.listener.webtrends.WebtrendsStreamListener;
-import com.mnxfst.stream.pipeline.PipelineRoot;
+import com.mnxfst.stream.listener.webtrends.WebtrendsStreamListenerActor;
 import com.mnxfst.stream.pipeline.config.PipelineElementConfiguration;
 import com.mnxfst.stream.pipeline.config.PipelineRootConfiguration;
 import com.mnxfst.stream.pipeline.element.es.ElasticSearchWriterPipelineElement;
@@ -193,17 +192,17 @@ public class ComponentRegistryTest {
 	public void test() throws Exception {
 		
 		///////////////////// LISTENER 
-		StreamEventListenerConfiguration streamListenerCfg = new StreamEventListenerConfiguration(WebtrendsStreamListener.class.getName(), "wt-listener-1", "wt-listener-1", "wt-listener-1", "0.1");		
-		streamListenerCfg.getSettings().put(WebtrendsStreamListener.WT_CONFIG_AUTH_AUDIENCE, "auth-audience");
-		streamListenerCfg.getSettings().put(WebtrendsStreamListener.WT_CONFIG_AUTH_SCOPE, "auth-scope");
-		streamListenerCfg.getSettings().put(WebtrendsStreamListener.WT_CONFIG_AUTH_URL, "auth-url");
-		streamListenerCfg.getSettings().put(WebtrendsStreamListener.WT_CONFIG_EVENT_STREAM_URL, "stream-url");
-		streamListenerCfg.getSettings().put(WebtrendsStreamListener.WT_CONFIG_CLIENT_ID, "client-id");
-		streamListenerCfg.getSettings().put(WebtrendsStreamListener.WT_CONFIG_CLIENT_SECRET, "client-secret");
-		streamListenerCfg.getSettings().put(WebtrendsStreamListener.WT_CONFIG_STREAM_TYPE, "stream-type");
-		streamListenerCfg.getSettings().put(WebtrendsStreamListener.WT_CONFIG_STREAM_QUERY, "stream-query");
-		streamListenerCfg.getSettings().put(WebtrendsStreamListener.WT_CONFIG_STREAM_VERSION, "stream-version");
-		streamListenerCfg.getSettings().put(WebtrendsStreamListener.WT_CONFIG_SCHEMA_VERSION, "schema-version");
+		StreamEventListenerConfiguration streamListenerCfg = new StreamEventListenerConfiguration(WebtrendsStreamListenerActor.class.getName(), "wt-listener-1", "wt-listener-1", "wt-listener-1", "0.1");		
+		streamListenerCfg.getSettings().put(WebtrendsStreamListenerActor.WT_CONFIG_AUTH_AUDIENCE, "auth-audience");
+		streamListenerCfg.getSettings().put(WebtrendsStreamListenerActor.WT_CONFIG_AUTH_SCOPE, "auth-scope");
+		streamListenerCfg.getSettings().put(WebtrendsStreamListenerActor.WT_CONFIG_AUTH_URL, "auth-url");
+		streamListenerCfg.getSettings().put(WebtrendsStreamListenerActor.WT_CONFIG_EVENT_STREAM_URL, "stream-url");
+		streamListenerCfg.getSettings().put(WebtrendsStreamListenerActor.WT_CONFIG_CLIENT_ID, "client-id");
+		streamListenerCfg.getSettings().put(WebtrendsStreamListenerActor.WT_CONFIG_CLIENT_SECRET, "client-secret");
+		streamListenerCfg.getSettings().put(WebtrendsStreamListenerActor.WT_CONFIG_STREAM_TYPE, "stream-type");
+		streamListenerCfg.getSettings().put(WebtrendsStreamListenerActor.WT_CONFIG_STREAM_QUERY, "stream-query");
+		streamListenerCfg.getSettings().put(WebtrendsStreamListenerActor.WT_CONFIG_STREAM_VERSION, "stream-version");
+		streamListenerCfg.getSettings().put(WebtrendsStreamListenerActor.WT_CONFIG_SCHEMA_VERSION, "schema-version");
 		streamListenerCfg.addDispatcher("root-disp");
 		
 		///////////////////// PIPELINE 
