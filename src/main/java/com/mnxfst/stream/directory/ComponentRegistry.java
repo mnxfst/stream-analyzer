@@ -40,6 +40,8 @@ import com.mnxfst.stream.directory.message.ComponentRegistrationResponseMessage;
  */
 public class ComponentRegistry extends UntypedActor {
 
+	public static final String COMPONENT_REGISTRY_ID = "componentRegistry";
+	
 	/**
 	 * map of already registered compontents - a reference that does not exist might be 
 	 * available in a remote store thus this is only a cache  

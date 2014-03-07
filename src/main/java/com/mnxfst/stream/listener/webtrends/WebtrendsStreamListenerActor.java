@@ -19,12 +19,18 @@ import org.eclipse.jetty.websocket.client.ClientUpgradeRequest;
 import org.eclipse.jetty.websocket.client.WebSocketClient;
 
 import akka.actor.ActorRef;
+import akka.actor.ActorSystem;
 import akka.actor.UntypedActor;
+import akka.event.EventStream;
 
 import com.fasterxml.uuid.EthernetAddress;
 import com.fasterxml.uuid.Generators;
-import com.fasterxml.uuid.UUIDGenerator;
 import com.fasterxml.uuid.impl.TimeBasedGenerator;
+import com.mnxfst.stream.directory.ComponentRegistry;
+import com.mnxfst.stream.directory.ComponentType;
+import com.mnxfst.stream.directory.message.ComponentRegistrationMessage;
+import com.mnxfst.stream.directory.message.ComponentRegistrationResponseMessage;
+import com.mnxfst.stream.listener.message.SubscribeStreamEventListenerMessage;
 import com.mnxfst.stream.message.StreamEventMessage;
 
 @WebSocket
@@ -39,10 +45,10 @@ public class WebtrendsStreamListenerActor extends UntypedActor {
 	private final String streamQuery;
 	private final String streamVersion;
 	private final String streamSchemaVersion;
-	private final Set<String> dispatcherIds = new HashSet<>();
 	private final String eventStreamUrl;
-	private final ActorRef componentRegistryRef;
-	  
+	private final Set<ActorRef> dispatchers = new HashSet<>();
+	final ActorRef componentRegistryRef;
+		  
 	private final CountDownLatch latch = new CountDownLatch(1);
 	
 	private WebSocketClient webtrendsStreamSocketClient = null;
@@ -56,17 +62,15 @@ public class WebtrendsStreamListenerActor extends UntypedActor {
 	 * @param streamVersion stream version
 	 * @param streamSchemaVersion schema version
 	 * @param eventStreamUrl url to fetch the webtrends events from
-	 * @param dispatcherIds dispatchers that will receive inbound events
-	 * @param componentRegistryRef component registry  
+	 * @param componentRegistryRef reference towards {@link ComponentRegistry component registry}
 	 */
-	public WebtrendsStreamListenerActor(final String oAuthToken, final String streamType, final String streamQuery, final String streamVersion, final String streamSchemaVersion, final String eventStreamUrl, Set<String> dispatcherIds, final ActorRef componentRegistryRef) {
+	public WebtrendsStreamListenerActor(final String oAuthToken, final String streamType, final String streamQuery, final String streamVersion, final String streamSchemaVersion, final String eventStreamUrl, final ActorRef componentRegistryRef) {
 		this.oAuthToken = oAuthToken;
 		this.streamType = streamType;
 		this.streamQuery = streamQuery;
 		this.streamSchemaVersion = streamSchemaVersion;
 		this.streamVersion = streamVersion;
 		this.eventStreamUrl = eventStreamUrl;
-		this.dispatcherIds.addAll(dispatcherIds);
 		this.componentRegistryRef = componentRegistryRef;
 	}
 	
@@ -76,10 +80,11 @@ public class WebtrendsStreamListenerActor extends UntypedActor {
 	 */
 	public void preStart() throws Exception {
 		
+		// initialize the uuid generator which is based on time and ethernet address
 		this.uuidGenerator = Generators.timeBasedGenerator(EthernetAddress.fromInterface());
 		
+		// initialize the webtrends stream socket client and connect the listener
 		this.webtrendsStreamSocketClient = new WebSocketClient();
-
 		try {
 			this.webtrendsStreamSocketClient.start();
 			ClientUpgradeRequest upgradeRequest = new ClientUpgradeRequest();
@@ -88,6 +93,8 @@ public class WebtrendsStreamListenerActor extends UntypedActor {
 		} catch(Exception e) {
 			throw new RuntimeException("Unable to connect to web socket: " + e.getMessage(), e);
 		}
+		
+		this.componentRegistryRef.tell(new ComponentRegistrationMessage(EVENT_SOURCE_ID, ComponentType.STREAM_LISTENER, getSelf()), getSelf());
 	}
 
 
@@ -115,7 +122,6 @@ public class WebtrendsStreamListenerActor extends UntypedActor {
 
 	    try {
 	    	session.getRemote().sendString(sb.toString());
-	    	System.out.println("WebTrends Streams API reader connected");
 	    	logger.info("WebTrends Streams API reader connected");
 	    } catch(IOException e) {
 	    	throw new RuntimeException("Unable to open stream", e);
@@ -126,13 +132,17 @@ public class WebtrendsStreamListenerActor extends UntypedActor {
 
 	/**
 	 * Executed by web socket implementation when receiving a message from the
-	 * streams api
+	 * streams api. The message will be directly forwarded to the current 
+	 * {@link ActorSystem actor systems} {@link EventStream event stream} 
 	 * @param message
 	 */
 	@OnWebSocketMessage
 	public void onMessage(String message) {
+		
 		try {
-			onReceive(new StreamEventMessage(uuidGenerator.generate().toString(), EVENT_SOURCE_ID, sdf.format(new Date()), message));
+			for(final ActorRef ref : this.dispatchers) {
+				ref.tell(new StreamEventMessage(uuidGenerator.generate().toString(), EVENT_SOURCE_ID, sdf.format(new Date()), message), getSender());
+			}
 		} catch(Exception e) {
 			logger.error("Failed to insert webtrends stream event into processing pipeline. Error: " + e.getMessage());
 		}
@@ -162,8 +172,24 @@ public class WebtrendsStreamListenerActor extends UntypedActor {
 	/**
 	 * @see akka.actor.UntypedActor#onReceive(java.lang.Object)
 	 */
-	public void onReceive(Object arg0) throws Exception {
+	public void onReceive(Object message) throws Exception {
 		
+		if(message instanceof SubscribeStreamEventListenerMessage) {
+			SubscribeStreamEventListenerMessage msg = (SubscribeStreamEventListenerMessage)message;
+			if(msg.getSubscriberRef() != null) {
+				this.dispatchers.add(msg.getSubscriberRef());
+				context().system().log().info("New stream subscriber: " + msg.getSubscriberRef());
+			}
+		} else if(message instanceof ComponentRegistrationResponseMessage) {
+			ComponentRegistrationResponseMessage msg = (ComponentRegistrationResponseMessage)message;
+			context().system().log().info("webtrends listener registration[id="+msg.getId()+", type="+msg.getType()+", state="+msg.getState()+"]");
+		} else {
+			unhandled(message);
+		}
+		
+		// TODO suspend message
+		// TODO disconnect message
+		// TODO reconnect message
 	}
 
 }

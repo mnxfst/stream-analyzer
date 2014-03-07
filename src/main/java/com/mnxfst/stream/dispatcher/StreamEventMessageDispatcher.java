@@ -23,6 +23,7 @@ import java.util.Set;
 
 import akka.actor.ActorRef;
 import akka.actor.UntypedActor;
+import akka.event.EventStream;
 
 import com.mnxfst.stream.directory.ComponentType;
 import com.mnxfst.stream.directory.message.ComponentLookupMessage;
@@ -108,7 +109,7 @@ public class StreamEventMessageDispatcher extends UntypedActor {
 	 * @param destinations
 	 */
 	protected void dispatchMessage(StreamEventMessage message) {
-		
+				
 		// ensure that only "non-null" messages are processed
 		if(message != null) {
 			// determine the destinations according to the configured dispatch policy
