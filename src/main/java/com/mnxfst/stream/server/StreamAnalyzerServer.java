@@ -42,8 +42,12 @@ import akka.actor.Props;
 
 import com.mnxfst.stream.config.StreamAnalyzerConfiguration;
 import com.mnxfst.stream.directory.ComponentRegistry;
+import com.mnxfst.stream.dispatcher.StreamEventMessageDispatcher;
 import com.mnxfst.stream.dispatcher.config.StreamEventMessageDispatcherConfiguration;
 import com.mnxfst.stream.listener.StreamEventListenerConfiguration;
+import com.mnxfst.stream.pipeline.PipelineRoot;
+import com.mnxfst.stream.pipeline.config.PipelineElementConfiguration;
+import com.mnxfst.stream.pipeline.config.PipelineRootConfiguration;
 
 /**
  * Initializes the stream analyzer server and starts it up
@@ -56,23 +60,21 @@ public class StreamAnalyzerServer  {
 	private static final Logger logger = Logger.getLogger(StreamAnalyzerServer.class.getName());
 	
 	private ActorSystem rootActorSystem;
+	private ActorRef componentRegistryRef;
 
 	public void run(final String configurationFilename, final int port) throws Exception {
-
-		// set up  the actor runtime environment
-		this.rootActorSystem = ActorSystem.create("streamanalyzer");
-		
 
 		ObjectMapper mapper = new ObjectMapper();
 		StreamAnalyzerConfiguration streamAnalyzerConfiguration = mapper.readValue(new File(configurationFilename), StreamAnalyzerConfiguration.class);
 
-		/////////////////////////////////////////////////////////////
-		// set up listeners
-		// TODO dynamic listners via REST 
+		// set up  the actor runtime environment
+		this.rootActorSystem = ActorSystem.create("streamanalyzer");
 		
-		/////////////////////////////////////////////////////////////
-		
-		
+		this.componentRegistryRef = componentRegistryInitialization();
+		pipelineInitialization(streamAnalyzerConfiguration.getPipelines());
+		dispatcherInitialization(streamAnalyzerConfiguration.getDispatchers(), componentRegistryRef);
+		listenerInitialization(streamAnalyzerConfiguration.getListeners(), componentRegistryRef);
+
 		EventLoopGroup bossGroup = new NioEventLoopGroup(); // (1)
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         try {
@@ -125,13 +127,39 @@ public class StreamAnalyzerServer  {
 		}		
 	}
 	
+	/**
+	 * Initializes the {@link StreamEventMessageDispatcher dispatchers} contained in the provided configuration
+	 * @param dispatcherConfigurations
+	 * @param componentRegistryRef
+	 * @throws Exception
+	 */
 	protected void dispatcherInitialization(final List<StreamEventMessageDispatcherConfiguration> dispatcherConfigurations, final ActorRef componentRegistryRef) throws Exception {
 		
 		// step through configurations
 		for(final StreamEventMessageDispatcherConfiguration dispCfg : dispatcherConfigurations) {
 			
-		}
-		
+			if(dispCfg != null) {
+				logger.info("dispatcher [id="+dispCfg.getId()+", name="+dispCfg.getName()+", policy="+dispCfg.getDispatchPolicy().getPolicyClass()+"]");
+				this.rootActorSystem.actorOf(Props.create(StreamEventMessageDispatcher.class, dispCfg, componentRegistryRef), dispCfg.getId());
+			}			
+		}		
+	}
+	
+	/**
+	 * Initializes the {@link PipelineRoot pipeline root} contained in the provided configuration
+	 * @param pipelineConfigurations
+	 * @throws Exception
+	 */
+	protected void pipelineInitialization(final List<PipelineRootConfiguration> pipelineConfigurations) throws Exception {
+	
+		// step through configurations
+		for(final PipelineRootConfiguration pipeCfg : pipelineConfigurations) {
+			
+			if(pipeCfg != null) {
+				logger.info("pipeline root [id="+pipeCfg.getPipelineId()+", initialReceiverId=" + pipeCfg.getInitialReceiverId()+"]");
+				this.rootActorSystem.actorOf(Props.create(PipelineRoot.class, pipeCfg), pipeCfg.getPipelineId());
+			}			
+		}		
 	}
 	
 	

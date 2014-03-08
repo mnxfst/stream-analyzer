@@ -35,7 +35,7 @@ public class PipelineRootConfiguration implements Serializable {
 	private static final long serialVersionUID = -2785753273278475169L;
 
 	/** unique identifier which is reported to the component registry and is used for accessing the pipeline */
-	@JsonProperty ( value = "id", required = true )
+	@JsonProperty ( value = "pipelineId", required = true )
 	private String pipelineId;
 	
 	/** description of pipeline behavior */
