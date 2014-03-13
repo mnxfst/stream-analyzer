@@ -99,6 +99,7 @@ public class StreamEventMessageDispatcher extends UntypedActor {
 			}
 		} else if(message instanceof ComponentLookupResponseMessage) {
 			
+			ComponentLookupResponseMessage lr = (ComponentLookupResponseMessage)message;
 			// handle component lookup response
 			registerDispatchDestinations((ComponentLookupResponseMessage)message);
 		}
@@ -144,7 +145,7 @@ public class StreamEventMessageDispatcher extends UntypedActor {
 						componentLookupMessage.addComponentId(id);
 					
 				}
-				
+
 				// if the component lookup message holds any identifiers, issue the request towards the registry
 				if(!componentLookupMessage.getComponentIds().isEmpty())
 					this.componentRegistryRef.tell(componentLookupMessage, getSelf());				
