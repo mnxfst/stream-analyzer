@@ -78,7 +78,7 @@ protected static ActorSystem system;
 		new JavaTestKit(system) {{
 			
 			PipelineRootConfiguration rootCfg = new PipelineRootConfiguration("test-pipeline", "description", "element-id");
-			rootCfg.addElementConfiguration(new PipelineElementConfiguration(rootCfg.getPipelineId(), "element-id", "description", "elementClass", 1));
+			rootCfg.addElementConfiguration(new PipelineElementConfiguration(rootCfg.getPipelineId(), "element-id", "description", "elementClass", 1, ""));
 			system.actorOf(Props.create(PipelineRoot.class, rootCfg));
 			// TODO how to handle this - need responses?
 		}};
@@ -92,7 +92,7 @@ protected static ActorSystem system;
 		new JavaTestKit(system) {{
 			
 			PipelineRootConfiguration rootCfg = new PipelineRootConfiguration("test-pipeline", "description", "element-id");
-			PipelineElementConfiguration cfg = new PipelineElementConfiguration(rootCfg.getPipelineId(), "element-id", "description", TestPipelineElement.class.getName(), 1);
+			PipelineElementConfiguration cfg = new PipelineElementConfiguration(rootCfg.getPipelineId(), "element-id", "description", TestPipelineElement.class.getName(), 1, "");
 			cfg.addSetting("logRefPath", getRef().path().toString());
 			rootCfg.addElementConfiguration(cfg);
 			final ActorRef pipelineRootRef = system.actorOf(Props.create(PipelineRoot.class, rootCfg));

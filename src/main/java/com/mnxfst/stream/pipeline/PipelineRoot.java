@@ -150,7 +150,6 @@ public class PipelineRoot extends UntypedActor {
 	 * @see akka.actor.UntypedActor#onReceive(java.lang.Object)
 	 */
 	public void onReceive(Object message) throws Exception {
-		
 		if(message instanceof StreamEventMessage) {
 			this.initialMessageReceiverRef.tell(message, getSelf());
 		} else if(message instanceof PipelineShutdownMessage) {

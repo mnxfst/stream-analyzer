@@ -206,20 +206,19 @@ public class ComponentRegistryTest {
 		streamListenerCfg.addDispatcher("root-disp");
 		
 		///////////////////// PIPELINE 
-		PipelineElementConfiguration esElementCfg = new PipelineElementConfiguration("wt-pipe", "es-writer", "Elastic Search Writer", ElasticSearchWriterPipelineElement.class.getName(), 1);
+		PipelineElementConfiguration esElementCfg = new PipelineElementConfiguration("wt-pipe", "es-writer", "Elastic Search Writer", ElasticSearchWriterPipelineElement.class.getName(), 1, "");
 		esElementCfg.addSetting(ElasticSearchWriterPipelineElement.ES_CLUSTER_NAME, "tracker");
 		esElementCfg.addSetting(ElasticSearchWriterPipelineElement.ES_DOCUMENT_TYPE, "error");
 		esElementCfg.addSetting(ElasticSearchWriterPipelineElement.ES_HOST_PREFIX + "0", "localhost");
 		esElementCfg.addSetting(ElasticSearchWriterPipelineElement.ES_PORT_PREFIX + "0", "9300");
 		esElementCfg.addSetting(ElasticSearchWriterPipelineElement.ES_WRITE_EVENT_ONLY, "true");
 		
-		PipelineElementConfiguration scriptElementCfg = new PipelineElementConfiguration("wt-pipe", "script-eval", "Script evaluator", ScriptEvaluatorPipelineElement.class.getName(), 1);
+		PipelineElementConfiguration scriptElementCfg = new PipelineElementConfiguration("wt-pipe", "script-eval", "Script evaluator", ScriptEvaluatorPipelineElement.class.getName(), 1, "");
 		scriptElementCfg.addSetting(ScriptEvaluatorPipelineElement.CONFIG_SCRIPT_ENGINE_NAME, "JavaScript");
 		scriptElementCfg.addSetting(ScriptEvaluatorPipelineElement.CONFIG_SCRIPT_INIT_CODE_PREFIX + "0", "spahql");
 		scriptElementCfg.addSetting(ScriptEvaluatorPipelineElement.CONFIG_SCRIPT_EVAL_CODE, "eval-script");
 		scriptElementCfg.addSetting(ScriptEvaluatorPipelineElement.CONFIG_SCRIPT_INPUT_VARIABLE, "eventContent");
 		scriptElementCfg.addSetting(ScriptEvaluatorPipelineElement.CONFIG_SCRIPT_OUTPUT_NEXT_ELEMENT_VARIABLE, "nextElement");
-		scriptElementCfg.addSetting(ScriptEvaluatorPipelineElement.CONFIG_SCRIPT_DEFAULT_DESTINATION_ELEMENT_ID, "es-writer");
 		
 		PipelineRootConfiguration pipelineCfg = new PipelineRootConfiguration("wt-pipe", "webtrends event analyzer pipeline", scriptElementCfg.getElementId());
 		pipelineCfg.addElementConfiguration(esElementCfg);

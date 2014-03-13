@@ -53,6 +53,10 @@ public class PipelineElementConfiguration implements Serializable {
 	@JsonProperty ( value = "numOfInstances", required = true )
 	private int numOfInstances = 1;
 	
+	/** default pipeline element messages will be forwarded to in case no other destination is defined */
+	@JsonProperty ( value = "defaultDestination", required = false )
+	private String defaultDestination = null;
+		
 	/** settings */
 	@JsonProperty ( value = "settings", required = true)
 	private Map<String, String> settings = new HashMap<>();
@@ -70,13 +74,15 @@ public class PipelineElementConfiguration implements Serializable {
 	 * @param description
 	 * @param elementClass
 	 * @param numOfInstances
+	 * @param defaultDestination
 	 */
-	public PipelineElementConfiguration(final String pipelineId, final String elementId, final String description, final String elementClass, final int numOfInstances) {
+	public PipelineElementConfiguration(final String pipelineId, final String elementId, final String description, final String elementClass, final int numOfInstances, final String defaultDestination) {
 		this.pipelineId = pipelineId;
 		this.elementId = elementId;
 		this.description = description;
 		this.elementClass = elementClass;
 		this.numOfInstances = numOfInstances;
+		this.defaultDestination = defaultDestination;
 	}
 	
 	/**
@@ -134,5 +140,13 @@ public class PipelineElementConfiguration implements Serializable {
 
 	public void setNumOfInstances(int numOfInstances) {
 		this.numOfInstances = numOfInstances;
+	}
+
+	public String getDefaultDestination() {
+		return defaultDestination;
+	}
+
+	public void setDefaultDestination(String defaultDestination) {
+		this.defaultDestination = defaultDestination;
 	}
 }

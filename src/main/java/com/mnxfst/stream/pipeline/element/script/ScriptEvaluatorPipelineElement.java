@@ -15,6 +15,10 @@
  */
 package com.mnxfst.stream.pipeline.element.script;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -50,15 +54,12 @@ public class ScriptEvaluatorPipelineElement extends PipelineElement {
 	public static final String CONFIG_SCRIPT_INPUT_VARIABLE = "script.var.input";
 	/** configuration option holding the variable where the script writes the identifier of the next pipeline element to */
 	public static final String CONFIG_SCRIPT_OUTPUT_NEXT_ELEMENT_VARIABLE = "script.var.output.nextelement";
-	/** configuration option holding the default destination in case the script does not return a valid element id */
-	public static final String CONFIG_SCRIPT_DEFAULT_DESTINATION_ELEMENT_ID = "script.destination.default";
 	
 	private ScriptEngine scriptEngine;
 	private List<String> initScripts = new ArrayList<>();	
 	private String evalScript = null;
 	private String scriptInputVariable = null;
 	private String scriptOutputNextElementVariable = null;
-	private String defaultDestinationElementId = null;
 	
 	public ScriptEvaluatorPipelineElement(PipelineElementConfiguration pipelineElementConfiguration) {
 		super(pipelineElementConfiguration);		 
@@ -83,20 +84,23 @@ public class ScriptEvaluatorPipelineElement extends PipelineElement {
 		// iterate from zero to max, read out init code snippets and interrupt if an empty one occurs
 		for(int i = 0; i < Integer.MAX_VALUE; i++) {
 			String initScript = getStringProperty(CONFIG_SCRIPT_INIT_CODE_PREFIX + i);
-			if(StringUtils.isNotBlank(initScript))
-				this.initScripts.add(initScript);
-			else
+			if(StringUtils.isNotBlank(initScript)) {
+				this.initScripts.add(loadScript(initScript.toString()));
+			} else {
 				break;
+			}
 		}
 
 		// fetch the script to be applied for each message
-		this.evalScript = getStringProperty(CONFIG_SCRIPT_EVAL_CODE);
-		if(StringUtils.isBlank(this.evalScript)) {
+		String scriptUrl = getStringProperty(CONFIG_SCRIPT_EVAL_CODE);
+//		this.evalScript = getStringProperty(CONFIG_SCRIPT_EVAL_CODE);
+		if(StringUtils.isBlank(scriptUrl)) {
 			context().parent().tell(new PipelineElementSetupFailedMessage(
 					getPipelineElementConfiguration().getPipelineId(), getPipelineElementConfiguration().getElementId(),
 					PipelineElementSetupFailedMessage.GENERAL, "Required script code missing"), getSelf());
 			return;
 		}
+		this.evalScript = loadScript(scriptUrl);
 		
 		// retrieve the name of the variable where the script expects the input 
 		this.scriptInputVariable = getStringProperty(CONFIG_SCRIPT_INPUT_VARIABLE);
@@ -116,15 +120,6 @@ public class ScriptEvaluatorPipelineElement extends PipelineElement {
 			return;
 		}
 		
-		// retrieve the default destination element id
-		this.defaultDestinationElementId = getStringProperty(CONFIG_SCRIPT_DEFAULT_DESTINATION_ELEMENT_ID);
-		if(StringUtils.isBlank(this.defaultDestinationElementId)) {
-			context().parent().tell(new PipelineElementSetupFailedMessage(
-					getPipelineElementConfiguration().getPipelineId(), getPipelineElementConfiguration().getElementId(),
-					PipelineElementSetupFailedMessage.GENERAL, "Required default destination (next element) missing"), getSelf());
-			return;
-		}
-
 		// if the set of init scripts is not empty, provide them to the script engine 
 		if(!initScripts.isEmpty()) {
 			for(String script : initScripts) {
@@ -158,11 +153,27 @@ public class ScriptEvaluatorPipelineElement extends PipelineElement {
 			
 			// fetch the next element identifier
 			String nextElementId = (String)this.scriptEngine.get(scriptOutputNextElementVariable);
-			if(StringUtils.isBlank(nextElementId)) {
-				// default
+			if(StringUtils.isNotBlank(nextElementId)) {
+				forwardMessage(message, nextElementId, true);
 			}
+			
 			
 		}
 	}
 
+	/**
+	 * Load scrtip from url
+	 * @param url
+	 * @return
+	 */
+	protected String loadScript(final String url) throws IOException {		
+		StringBuffer scriptContent = new StringBuffer();
+		URL initScriptUrl = new URL(url);
+		BufferedReader reader = new BufferedReader(new InputStreamReader(initScriptUrl.openStream()));
+		int c = -1;
+		while((c = reader.read()) != -1) {
+			scriptContent.append((char)c);
+		}
+		return scriptContent.toString();
+	}
 }

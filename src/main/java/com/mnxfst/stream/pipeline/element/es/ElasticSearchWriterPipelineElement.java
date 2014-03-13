@@ -131,7 +131,7 @@ public class ElasticSearchWriterPipelineElement extends PipelineElement {
 	/**
 	 * @see com.mnxfst.stream.pipeline.PipelineElement#processEvent(com.mnxfst.stream.message.StreamEventMessage)
 	 */
-	protected void processEvent(StreamEventMessage message) throws Exception {		
+	protected void processEvent(StreamEventMessage message) throws Exception {
 		if(isWriteEventOnly) {
 			this.elasticSearchTransportClient.prepareIndex(indexName.toLowerCase(), documentType.toLowerCase()).setSource(message.getEvent()).execute().actionGet(); 
 		} else {

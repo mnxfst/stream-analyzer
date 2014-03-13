@@ -83,7 +83,7 @@ public class PipelinesMasterTest {
 
 			final ActorRef pipelineMaster = system.actorOf(Props.create(PipelinesMaster.class, getRef()));
 			PipelineRootConfiguration cfg = new PipelineRootConfiguration(null, "description", "element-id");
-			cfg.addElementConfiguration(new PipelineElementConfiguration(cfg.getPipelineId(), "element-id", "description", TestPipelineElement.class.getName(), 5));
+			cfg.addElementConfiguration(new PipelineElementConfiguration(cfg.getPipelineId(), "element-id", "description", TestPipelineElement.class.getName(), 5, ""));
 			pipelineMaster.tell(new PipelineSetupMessage(cfg), getRef());
 			
 			PipelineSetupResponseMessage response = (PipelineSetupResponseMessage)receiveOne(Duration.create(500, TimeUnit.MILLISECONDS));
@@ -118,7 +118,7 @@ public class PipelinesMasterTest {
 
 			final ActorRef pipelineMaster = system.actorOf(Props.create(PipelinesMaster.class, getRef()));
 			PipelineRootConfiguration cfg = new PipelineRootConfiguration("pipeline-1", "description", "element-id");
-			cfg.addElementConfiguration(new PipelineElementConfiguration(cfg.getPipelineId(), null, "desc-1", "class", 5));
+			cfg.addElementConfiguration(new PipelineElementConfiguration(cfg.getPipelineId(), null, "desc-1", "class", 5, ""));
 			pipelineMaster.tell(new PipelineSetupMessage(cfg), getRef());
 			
 			PipelineSetupResponseMessage response = (PipelineSetupResponseMessage)receiveOne(Duration.create(500, TimeUnit.MILLISECONDS));
@@ -136,7 +136,7 @@ public class PipelinesMasterTest {
 
 			final ActorRef pipelineMaster = system.actorOf(Props.create(PipelinesMaster.class, getRef()));
 			PipelineRootConfiguration cfg = new PipelineRootConfiguration("pipeline-1", "description", "id");
-			cfg.addElementConfiguration(new PipelineElementConfiguration(cfg.getPipelineId(), "id", "desc-1", null, 5));
+			cfg.addElementConfiguration(new PipelineElementConfiguration(cfg.getPipelineId(), "id", "desc-1", null, 5, ""));
 			pipelineMaster.tell(new PipelineSetupMessage(cfg), getRef());
 			
 			PipelineSetupResponseMessage response = (PipelineSetupResponseMessage)receiveOne(Duration.create(500, TimeUnit.MILLISECONDS));
@@ -154,7 +154,7 @@ public class PipelinesMasterTest {
 
 			final ActorRef pipelineMaster = system.actorOf(Props.create(PipelinesMaster.class, getRef()));
 			PipelineRootConfiguration cfg = new PipelineRootConfiguration("pipeline-1", "description", "id");
-			cfg.addElementConfiguration(new PipelineElementConfiguration(cfg.getPipelineId(), "id", "desc-1", TestPipelineElement.class.getName(), 5));
+			cfg.addElementConfiguration(new PipelineElementConfiguration(cfg.getPipelineId(), "id", "desc-1", TestPipelineElement.class.getName(), 5, ""));
 			pipelineMaster.tell(new PipelineSetupMessage(cfg), getRef());
 			
 			ComponentRegistrationMessage pipelineRegisteredMessage = (ComponentRegistrationMessage)receiveOne(Duration.create(500, TimeUnit.MILLISECONDS));
@@ -179,9 +179,9 @@ public class PipelinesMasterTest {
 
 			final ActorRef pipelineMaster = system.actorOf(Props.create(PipelinesMaster.class, getRef()));
 			PipelineRootConfiguration cfg = new PipelineRootConfiguration("pipeline-1", "description", "id");
-			PipelineElementConfiguration elementCfg = new PipelineElementConfiguration(cfg.getPipelineId(), "id", "desc-1", "unknown", 5);
+			PipelineElementConfiguration elementCfg = new PipelineElementConfiguration(cfg.getPipelineId(), "id", "desc-1", "unknown", 5, "");
 			elementCfg.addSetting("test","test");
-			cfg.addElementConfiguration(new PipelineElementConfiguration(cfg.getPipelineId(), "id1", "desc-1", TestPipelineElement.class.getName(), 5));
+			cfg.addElementConfiguration(new PipelineElementConfiguration(cfg.getPipelineId(), "id1", "desc-1", TestPipelineElement.class.getName(), 5, ""));
 			cfg.addElementConfiguration(elementCfg);
 			pipelineMaster.tell(new PipelineSetupMessage(cfg), getRef());
 //			Thread.sleep(1000);

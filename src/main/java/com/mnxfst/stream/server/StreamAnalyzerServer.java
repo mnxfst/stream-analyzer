@@ -26,7 +26,6 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 
 import java.io.File;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -46,8 +45,9 @@ import com.mnxfst.stream.dispatcher.StreamEventMessageDispatcher;
 import com.mnxfst.stream.dispatcher.config.StreamEventMessageDispatcherConfiguration;
 import com.mnxfst.stream.listener.StreamEventListenerConfiguration;
 import com.mnxfst.stream.pipeline.PipelineRoot;
-import com.mnxfst.stream.pipeline.config.PipelineElementConfiguration;
+import com.mnxfst.stream.pipeline.PipelinesMaster;
 import com.mnxfst.stream.pipeline.config.PipelineRootConfiguration;
+import com.mnxfst.stream.pipeline.message.PipelineSetupMessage;
 
 /**
  * Initializes the stream analyzer server and starts it up
@@ -61,6 +61,7 @@ public class StreamAnalyzerServer  {
 	
 	private ActorSystem rootActorSystem;
 	private ActorRef componentRegistryRef;
+	private ActorRef pipelineMasterRef;
 
 	public void run(final String configurationFilename, final int port) throws Exception {
 
@@ -152,12 +153,16 @@ public class StreamAnalyzerServer  {
 	 */
 	protected void pipelineInitialization(final List<PipelineRootConfiguration> pipelineConfigurations) throws Exception {
 	
+		this.pipelineMasterRef = this.rootActorSystem.actorOf(Props.create(PipelinesMaster.class, componentRegistryRef), "pipelineMaster");
+		
 		// step through configurations
 		for(final PipelineRootConfiguration pipeCfg : pipelineConfigurations) {
 			
 			if(pipeCfg != null) {
 				logger.info("pipeline root [id="+pipeCfg.getPipelineId()+", initialReceiverId=" + pipeCfg.getInitialReceiverId()+"]");
-				this.rootActorSystem.actorOf(Props.create(PipelineRoot.class, pipeCfg), pipeCfg.getPipelineId());
+				PipelineSetupMessage msg = new PipelineSetupMessage(pipeCfg);
+				this.pipelineMasterRef.tell(msg, null);
+//				this.rootActorSystem.actorOf(Props.create(PipelineRoot.class, pipeCfg), pipeCfg.getPipelineId());
 			}			
 		}		
 	}
