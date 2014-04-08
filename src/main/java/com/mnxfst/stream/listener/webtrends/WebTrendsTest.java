@@ -41,7 +41,7 @@ public class WebTrendsTest {
 		final ActorRef webtrendsStreamListenerRef = system.actorOf(Props.create(WebtrendsStreamListenerActor.class, oAuthToken, streamType, streamQuery, streamVersion, streamSchemaVersion, "ws://sapi.webtrends.com/streaming", componentRegistry));
 		
 		PipelineRootConfiguration prc = new PipelineRootConfiguration("pipe-1", "pipe-1", "log-1");
-		prc.addElementConfiguration(new PipelineElementConfiguration("pipe-1", "log-1", "log-1", LogWriterPipelineElement.class.getName(), 1));
+		prc.addElementConfiguration(new PipelineElementConfiguration("pipe-1", "log-1", "log-1", LogWriterPipelineElement.class.getName(), 1, "default"));
 		
 		final ActorRef pipeMaster = system.actorOf(Props.create(PipelinesMaster.class, componentRegistry));
 		pipeMaster.tell(new PipelineSetupMessage(prc), null);		
