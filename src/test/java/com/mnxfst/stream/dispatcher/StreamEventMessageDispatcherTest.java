@@ -146,7 +146,6 @@ protected static ActorSystem system;
 		cfg.addDestination("test-destination-3");
 
 		new JavaTestKit(system) { {
-			
 			final ActorRef dispatcherRef = system.actorOf(Props.create(StreamEventMessageDispatcher.class, cfg, getRef()), "testDispatcherWithValidSetupAndStreamEventMessage");
 			ComponentRegistrationMessage registrationRequest = (ComponentRegistrationMessage)receiveOne(Duration.create(500, TimeUnit.MILLISECONDS));
 			Assert.assertNotNull("The registration request must not be null", registrationRequest);
