@@ -163,6 +163,8 @@ protected static ActorSystem system;
 			
 			dispatcherRef.tell(new StreamEventMessage("test-id", "test-origin", "2014-03-03", "TestEvent"), getRef());
 			
+			
+			
 			lookupMessage = (ComponentLookupMessage)receiveOne(Duration.apply(500, TimeUnit.MILLISECONDS));
 			Assert.assertNotNull("The component lookup request must not be null", lookupMessage);
 			Assert.assertEquals("The type must be equal", ComponentType.DISPATCHER, lookupMessage.getType());
