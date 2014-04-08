@@ -137,6 +137,8 @@ protected static ActorSystem system;
 	@Test
 	public void testDispatcherWithValidSetupAndStreamEventMessage() {
 		
+		
+		
 		final DispatchPolicyConfiguration dispatchPolicyCfg = new DispatchPolicyConfiguration("policy-1", TestDispatcher.class.getName());
 		dispatchPolicyCfg.addSetting("test-destination-1", null);
 		
